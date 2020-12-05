@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- MENU ROOT: seul BPO et PREA accedent à ce root menu-->
+    <menuitem id="root_menu" name="MGP"/>
+
+    <!-- MENU VERTICAL -->
+    <menuitem id="plainte_sub_menu" parent="root_menu" name="Plaintes" sequence="1" />
+
+    <!-- MENU PLAINTE PMO: seul BPO  accede à ce menu-->
+    <menuitem id="plainte_bpo_menu" parent="root_menu" name="Création des plaintes" action="plainte_bpo_action_window"
+        groups="mgp.mgp_gouvernance_operateur" sequence="2"/>
+
+    <!-- MENU PLAINTE PMO: seul PREA  accede à ce menu-->
+    <menuitem id="plainte_prea_menu" parent="root_menu" name="Gestion des plaintes" action="plainte_prea_action_window"
+        groups="mgp.mgp_gouvernance_prea" sequence="3"/>
+
+    <!-- MENU PLAINTE PMO: seul PMO  accede à ce menu-->
+    <menuitem id="plainte_pmo_menu" parent="root_menu" name="Traitement des plaintes" action="plainte_pmo_action_window"
+        groups="mgp.mgp_gouvernance_pmo" sequence="4"/>
+    
+    <!-- MENU PARAMETRE PLAINTE-->
+    <menuitem id="param_plainte_sub_menu" parent="root_menu" name="Paramétrage plainte" sequence="5"
+        groups="mgp.mgp_gouvernance_prea"/>
+    <menuitem id="categorie_menu" parent="param_plainte_sub_menu" action="categorie_action_window"/>
+    <menuitem id="categorie_details_menu" parent="param_plainte_sub_menu" action="categorie_details_action_window"/>
+    <menuitem id="composante_menu" parent="param_plainte_sub_menu" action="composante_action_window"/>
+
+    <!-- MENU LOCALISATION -->
+    <menuitem id="province_sub_menu" parent="root_menu" name="Paramétrage localisation" sequence="6"
+        groups="mgp.mgp_gouvernance_prea"/>
+    <menuitem id="province_menu" parent="province_sub_menu" action="province_action_window"/>
+    <menuitem id="region_menu" parent="province_sub_menu" action="region_action_window"/>
+    <menuitem id="district_menu" parent="province_sub_menu" action="district_action_window"/>
+    <menuitem id="commune_menu" parent="province_sub_menu" action="commune_action_window"/>
+    <menuitem id="fokontany_menu" parent="province_sub_menu" action="fokontany_action_window"/>
+
+    <!-- MENU CITOYEN -->
+    <menuitem id="citoyen_sub_menu" parent="root_menu" name="Paramétrage citoyen" sequence="7"
+        groups="mgp.mgp_gouvernance_prea"/>
+    <menuitem id="education_menu" parent="citoyen_sub_menu" action="education_action_window"/>
+    <menuitem id="tranche_age_menu" parent="citoyen_sub_menu" action="tranche_action_window"/>
+</odoo>

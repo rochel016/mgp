@@ -1,0 +1,38 @@
+<odoo>
+
+  <!-- explicit list view definition -->
+  <record id="education_list_view" model="ir.ui.view">
+    <field name="name">educations.list</field>
+    <field name="model">mgp.citoyen_education</field>
+    <field name="arch" type="xml">
+      <tree>
+        <field name="name"/>
+      </tree>
+    </field>
+  </record>
+
+  <!-- actions opening views on models -->
+  <record id="education_form_view" model="ir.ui.view">
+    <field name="name">education.form.view</field>
+    <field name="model">mgp.citoyen_education</field>
+    <field name="arch" type="xml">
+      <form>
+        <sheet>
+          <div class="oe_title">
+            <label for="name" class="oe_edit_only" string="Nom d'é'ducation" />
+            <h1>
+              <field name="name" />
+            </h1>
+          </div>
+        </sheet>
+      </form>
+    </field>
+  </record>
+
+  <!-- server action to the one above -->
+  <record model="ir.actions.act_window" id="education_action_window">
+    <field name="name">Educations</field>
+    <field name="res_model">mgp.citoyen_education</field>
+    <field name="view_mode">tree,form</field>
+  </record>
+</odoo>

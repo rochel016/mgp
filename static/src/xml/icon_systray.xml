@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<templates>
+    <t t-name="systray_ticket.icon">
+        <li class="new_icon">
+            <label class="my_icon" style="margin-bottom:0px;" title="My Icon">
+                <div class="icon_div">
+                    <div class="toggle-icon">
+                        <i class="fa fa-bell" style="color:yellow" id="fa-bell"/>
+                        <sup class="toto">1</sup>  
+                    </div>
+                </div>
+            </label>
+        </li>
+    </t>
+</templates>
