@@ -73,30 +73,47 @@ class Plainte(models.Model):
     ennonce = fields.Text(string="Plainte et Doléance", required=True)
 
     situation = fields.Selection([
-        ('injoignable', 'Injoignable'),
-        ('resolu', 'Résolu'),
+        ('joignable', 'le client a été joingnable'),
+        ('injoignable', 'Le client est injoignable'),
     ], string="situation", readonly=True)
 
     resultat = fields.Selection([
         ('satisfait', 'Satisfait'),
-        ('non_satisfait', 'Non satisfait'),
+        ('insatisfait', 'Non satisfait'),
     ], string="Niveau de satisfaction", readonly=True)
 
-    closed = fields.Boolean(string="Fermé", default=False)
-
     statut = fields.Selection([
-        ('state', 'Créé BPO'), # Ticket créé au BPO
-        ('state_validate_prea', 'Validation PREA'), # En validatiton au PREA
-        ('state_traitement_pmo', 'Traitement PMO'), # En traitement ched PMO
-        ('state_eval_response_prea', 'Evaluation PREA'), # EN évaluation chez PREA
-        ('state_send_response_bpo', 'Envoi réponse citoyen'), # Donner la réponse au citoyen par BPO
+        ('state', 'Créé par BPO'), # Ticket créé au BPO
+        ('state_validate_prea', 'A valider par PREA'), # En validatiton au PREA
+        ('state_traitement_pmo', 'A traiter par PMO'), # En traitement ched PMO
+        ('state_eval_response_prea', 'A évaluer par PREA'), # EN évaluation chez PREA
+        ('state_send_response_bpo', 'A traiter par BPO'), # Donner la réponse au citoyen par BPO
         ('state_done_bpo', 'Traité'), # Le traitment du ticket est terminé
         ('state_invalid', 'Invalide'), # Ticket invalide par le PREA (non exploitable)
+        ('state_closed_prea', 'Fermé'), # Ticket fermé par le PREA
     ], string='Statut', readonly=True, copy=False, default='state', group_expand='_expand_states')
 
     # Permet d'afficher tous les status sans (kanban) même si c'est vide
     def _expand_states(self, states, domain, order):
         return [key for key, val in type(self).statut.selection]
+        # if self.env.user.has_group('mgp.mgp_gouvernance_operateur'):
+        #     return [key for key, val in [
+        #         ('state', 'Créé par BPO'),
+        #         ('state_send_response_bpo', 'A traiter par BPO'),
+        #         ('state_done_bpo', 'Traité')]]
+        # elif self.env.user.has_group('mgp.mgp_gouvernance_prea'):
+        #     return [key for key, val in [
+        #         ('state_validate_prea', 'A valider par PREA'),
+        #         ('state_traitement_pmo', 'A traiter par PMO'),
+        #         ('state_eval_response_prea', 'A évaluer par PREA'),
+        #         ('state_send_response_bpo', 'A traiter par BPO'),
+        #         ('state_done_bpo', 'Traité'),
+        #         ('state_closed_prea', 'Fermé'),
+        #         ('state_invalid', 'Invalide')]]
+        # elif self.env.user.has_group('mgp.mgp_gouvernance_pmo'):
+        #     return [key for key, val in [
+        #         ('state_traitement_pmo', 'A traiter par PMO'),
+        #         ('state_closed_prea', 'Fermé')]]
 
     # Note: Seul le group 'mgp_gouvernance_prea' a le droit d'ajouter des notes
     note_ids = fields.One2many('mgp.plainte_note', 'plainte_id', string='Notes')
@@ -133,14 +150,13 @@ class Plainte(models.Model):
         """ Renvoie le statut de la réponse"""
         self.statut_response_display = 'Oui' if self.reponse_envoye else 'Non'
 
-    resultat_display = fields.Text(string="Satisfaction", compute='get_resultat')
-    def get_resultat(self):
-        """ Champs calculé qui renvoie le résultat de la plainte """
-        for rec in self:
-            res = dict(self._fields['resultat'].selection).get(self.resultat)
-            if not res:
-                res = "En attente ..."
-            self.resultat_display = res
+    situation_display = fields.Text(compute='get_situation')
+    def get_situation(self):
+        self.situation_display = dict(self._fields['situation'].selection).get(self.situation)
+
+    result_display = fields.Text(compute='get_result')
+    def get_result(self):
+        self.result_display = dict(self._fields['resultat'].selection).get(self.resultat)
 
     # Liste des logs (AUDIT)
     log_ids = fields.Many2many("mgp.plainte_log", compute="_get_log_ids")
@@ -228,8 +244,8 @@ class Plainte(models.Model):
     def check_tel(self):
         """ Le téléphone ne contient que des chiffres, séparé par point virgule """
         for rec in self:
-            if len(rec.tel) < 10 or not re.match(r"^[0-9;]+$", rec.tel):
-                raise ValidationError(_("Le ticket n° a été envoyée aux admin PREA."))
+            if len(rec.tel) != 10 or not re.match(r"^[0-9;]+$", rec.tel):
+                raise ValidationError(_("Le numéro doit être chiffre et de 10 digits"))
                 # ??? return {
                 #     'type': 'ir.actions.client',
                 #     'tag': 'display_notification',
@@ -439,38 +455,38 @@ class Plainte(models.Model):
                 },
             }
 
-    def action_resolu(self):
+    def action_joignable(self):
         """
         - User : BPO
-        - Status: 'state_done_bpo'
-        - situation = 'resolu'
+        - Status: 'state_send_response_bpo', Statut non traité, attends la satisfaction ou non
+        - situation = 'joignable'
         - Desc: Le ticket est résolu
         - From BPO to PREA
         """
         if self.env.user.has_group('mgp.mgp_gouvernance_operateur'):
             for rec in self:
                 # 1 - Update ticket state
-                rec.statut = 'state_done_bpo'
-                rec.situation = 'resolu'
+                rec.statut = 'state_send_response_bpo'
+                rec.situation = 'joignable'
             
-                # 2 - Log : Tiket résolu
+                # 2 - Log : Citoyen joignable
                 self._do_log(
                     plainte_id = rec.id,
                     group_sender_id = self.env.ref('mgp.mgp_gouvernance_operateur').id,
                     group_receiver_id = self.env.ref('mgp.mgp_gouvernance_prea').id,
-                    action = "Ticket résolu",
-                    statut = "state_done_bpo",
-                    notif_sender = "Ticket résolu",
-                    notif_receiver = "Le ticket est résolu")
+                    action = "Joindre le citoyen",
+                    statut = "state_send_response_bpo",
+                    notif_sender = "Citoyen joignable",
+                    notif_receiver = "Le citoyen est joignable")
                 
                 # 3 - Envoyer un message au tiket (réponse)
-                self._action_send_sms(rec.id, "Le ticket n°{} est résolu.".format(rec.reference))
+                self._action_send_sms(rec.id, "Le citoyen ayan le ticket n°{} est joignable.".format(rec.reference))
         else:
             return {
                 'type': 'ir.actions.client',
                 'tag': 'display_notification',
                 'params': {
-                    'title': _("Clôture du ticket"),
+                    'title': _("Joindre le citoyen"),
                     'message': _("Seul l'opérateur BPO peut faire cette action."),
                     'type':'danger',  
                     'sticky': False,
@@ -480,7 +496,7 @@ class Plainte(models.Model):
     def action_injoignable(self):
         """
         - User : BPO
-        - Status: 'state_done_bpo' # Ce statut ne change pas mais reste 'done'
+        - Status: 'state_done_bpo' # Ce statut est traité
         - Situation= 'injoignable'
         - Desc: Le citoyen est injoignable
         - From BPO to PREA
@@ -491,12 +507,12 @@ class Plainte(models.Model):
                 rec.statut = 'state_done_bpo'
                 rec.situation = 'injoignable'
             
-                # 2 - Log : Tiket résolu
+                # 2 - Log : citoyen injoignable
                 self._do_log(
                     plainte_id = rec.id,
                     group_sender_id = self.env.ref('mgp.mgp_gouvernance_operateur').id,
                     group_receiver_id = self.env.ref('mgp.mgp_gouvernance_prea').id,
-                    action = "Citoyen injoignable",
+                    action = "Joindre le citoyen",
                     statut = "state_done_bpo",
                     notif_sender = "Citoyen injoignable",
                     notif_receiver = "Le citoyen est injoignable")
@@ -518,8 +534,8 @@ class Plainte(models.Model):
     def action_satisfait(self):
         """
         - User : BPO
-        - Status: 'state_done_bpo' # Ce statut ne change pas mais reste 'done'
-        - resultat= 'satisfait'
+        - Status: 'state_done_bpo' # Le ticket est traité
+        - resultat: 'satisfait'
         - Desc: Le citoyen est satisfait
         - From BPO to PREA
         """
@@ -529,12 +545,12 @@ class Plainte(models.Model):
                 rec.statut = 'state_done_bpo'
                 rec.resultat = 'satisfait'
             
-                # 2 - Log : Tiket résolu
+                # 2 - Log : citoyen satisfait
                 self._do_log(
                     plainte_id = rec.id,
                     group_sender_id = self.env.ref('mgp.mgp_gouvernance_operateur').id,
                     group_receiver_id = self.env.ref('mgp.mgp_gouvernance_prea').id,
-                    action = "Citoyen injoignable",
+                    action = "Réponse du client",
                     statut = "state_done_bpo",
                     notif_sender = "Citoyen satisfait",
                     notif_receiver = "Le citoyen est satisfait")
@@ -546,7 +562,7 @@ class Plainte(models.Model):
                 'type': 'ir.actions.client',
                 'tag': 'display_notification',
                 'params': {
-                    'title': _("Appel injoignable"),
+                    'title': _("Réponse du client"),
                     'message': _("Seul l'opérateur BPO peut faire cette action."),
                     'type':'danger',  
                     'sticky': False,
@@ -556,26 +572,26 @@ class Plainte(models.Model):
     def action_non_satisfait(self):
         """
         - User : BPO
-        - Status: 'state_done_bpo' # Ce statut ne change pas mais reste 'done'
-        - resultat= 'non_satisfait'
-        - Desc: Le citoyen est satisfait
+        - Status: 'state_eval_response_prea' # Le tiocket va retourner chez le PREA pour reevalaluation
+        - resultat= 'insatisfait'
+        - Desc: Renvoi du tocket au PREA
         - From BPO to PREA
         """
         if self.env.user.has_group('mgp.mgp_gouvernance_operateur'):
             for rec in self:
                 # 1 - Update ticket state
-                rec.statut = 'state_done_bpo'
-                rec.resultat = 'non_satisfait'
+                rec.statut = 'state_eval_response_prea'
+                rec.resultat = 'insatisfait'
             
-                # 2 - Log : Tiket résolu
+                # 2 - Log : Renvoi du ticket au PREA
                 self._do_log(
                     plainte_id = rec.id,
                     group_sender_id = self.env.ref('mgp.mgp_gouvernance_operateur').id,
                     group_receiver_id = self.env.ref('mgp.mgp_gouvernance_prea').id,
-                    action = "Citoyen injoignable",
-                    statut = "state_done_bpo",
-                    notif_sender = "Citoyen non satisfait",
-                    notif_receiver = "Le citoyen est non satisfait")
+                    action = "Renvoi du ticket au PREA",
+                    statut = "state_eval_response_prea",
+                    notif_sender = "Ticket renvoyé au PREA",
+                    notif_receiver = "Le ticket est renvoyé à cause de non satisfaction")
                 
                 # 3 - Envoyer un message au tiket (réponse)
                 self._action_send_sms(rec.id, "Le citoyen ayant le ticket n° {} est non satisfait.".format(rec.reference))
@@ -584,9 +600,9 @@ class Plainte(models.Model):
                 'type': 'ir.actions.client',
                 'tag': 'display_notification',
                 'params': {
-                    'title': _("Appel injoignable"),
+                    'title': _("Renvoi du ticket au PREA"),
                     'message': _("Seul l'opérateur BPO peut faire cette action."),
-                    'type':'danger',  
+                    'type':'danger',
                     'sticky': False,
                 },
             }
@@ -688,7 +704,7 @@ class Plainte(models.Model):
                     }
 
                 # 1 - Update ticket state
-                rec.statut = 'state_req_processed'
+                rec.statut = 'state_send_response_bpo'
                 rec.reponse_envoye = True
             
                 # 2 - Log : Envoi réponse
@@ -718,17 +734,16 @@ class Plainte(models.Model):
     def action_close(self):
         """
         - User : PREA
-        - Status: 'state_done_bpo' # Ce statut ne change pas mais reste 'done'
+        - Status: 'state_closed_prea' # Ce statut ne change pas mais reste 'done'
         - Desc: Fermer le ticket (plainte)
         - From PREA to BPO
         - Conditions supplémentaire: valid si 'injoignable' ou 'satisfait' ou 'insatisfait'
         """
         if self.env.user.has_group('mgp.mgp_gouvernance_prea') \
-            and (self.situation=='injoignable' or self.resultat=='satisfat' or self.resultat=='non-satisfat'):
+            and (self.situation=='injoignable' or self.resultat=='satisfat' or self.resultat=='insatisfat'):
             for rec in self:
                 # 1 - Update ticket state
-                rec.statut = 'state_closed'
-                rec.closed = True
+                rec.statut = 'state_closed_prea'
             
                 # 2 - Log : Fermer le ticket
                 self._do_log(
@@ -736,7 +751,7 @@ class Plainte(models.Model):
                     group_sender_id = self.env.ref('mgp.mgp_gouvernance_prea').id,
                     group_receiver_id = self.env.ref('mgp.mgp_gouvernance_operateur').id,
                     action = "Fermeture du ticket",
-                    statut = "state_done_bpo",
+                    statut = "state_closed_prea",
                     notif_sender = "Ticket fermé",
                     notif_receiver = "Le ticket est fermé")
                 
@@ -744,7 +759,7 @@ class Plainte(models.Model):
                 self._action_send_sms(rec.id, "Le ticket n° {} a été fermée par le PREA.".format(rec.reference))
         else:
             message = ''
-            if (self.situation!='injoignable' or self.resultat!='satisfat' or self.resultat!='non_satisfait'):
+            if (self.situation!='injoignable' or self.resultat!='satisfat' or self.resultat!='insatisfait'):
                 message = "Impossible de fermer le ticket car au moins le citoyen est injoignable ou bien satisfait ou non satisfait"
             else:
                 message = "Seul l'administrateur PREA peut fermer un ticket."
@@ -770,6 +785,18 @@ class Plainte(models.Model):
         - Desc: Envoyer la réponse au PREA
         - From PMO to PREA
         """
+        if not self.reponse_ids:
+            return {
+                'type': 'ir.actions.client',
+                'tag': 'display_notification',
+                'params': {
+                    'title': _("Envoi réponse au PREA"),
+                    'message': _("Vous devez saisir la réponse à envoyer."),
+                    'type':'danger',  
+                    'sticky': False,
+                },
+            }
+
         if self.env.user.has_group('mgp.mgp_gouvernance_pmo'):
             for rec in self:
                 if not rec.reponse_ids:
@@ -785,7 +812,7 @@ class Plainte(models.Model):
                     }
 
                 # 1 - Update ticket state and response
-                rec.statut = 'state_req_processed'
+                rec.statut = 'state_eval_response_prea'
                 rec.reponse_envoye = True
             
                 # 2 - Log : Envoi réponse

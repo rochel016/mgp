@@ -31,7 +31,6 @@
     <field name="model">mgp.plainte</field>
     <field name="arch" type="xml">
       <form>
-        <field name="closed" invisible="1"/> <!--IMPORTANT -->
         <field name="reponse_envoye" invisible="1"/> <!--IMPORTANT -->
         <header>
           <!--Group receiver of current user ('is_last_group_receiver', '=', False) -->
@@ -52,76 +51,93 @@
           <button name="action_send_response_to_bpo" type="object" class="oe_highlight" 
             string="Envoyer réponse au BPO"
             confirm="Voulez vous envoyer la réponse au BPO?"
-            statuts="state_send_response_bpo"
-            attrs="{'invisible': [('statut', '!=', 'state_send_response_bpo')]}"/>
+            statuts="state_eval_response_prea"
+            attrs="{'invisible': [('statut', '!=', 'state_eval_response_prea')]}"/>
 
-          <button name="action_close" type="object" class="oe_highlight" readonly="1"
+          <button name="action_close" type="object" class="oe_highlight"
             string="Fermer le ticket" 
             confirm="Voulez vous vraiment fermer ce ticket?"
-            statuts="state_send_response_bpo" 
-            attrs="{'invisible': [('statut', '!=', 'state_send_response_bpo')]}"/>
+            statuts="state_done_bpo"
+            attrs="{'invisible': [('statut', '!=', 'state_done_bpo')]}"/>
           
           <!-- Status bar -->
           <field name='statut' widget='statusbar' clickable="True" 
-            statusbar_visible='state,state_validate_prea,state_traitement_pmo,state_eval_response_prea,state_send_response_bpo,state_done_bpo,state_invalid'/>
+            statusbar_visible='state,state_validate_prea,state_traitement_pmo,state_eval_response_prea,state_send_response_bpo,state_done_bpo,state_invalid,state_closed_prea'/>
         </header>
 
         <sheet>
           <!-- Widget statinfo -->
           <div class="oe_button_box" name="button_box">
+            <!-- Résultat -->
+            <button name="get_result" type="object" class="oe_stat_button" icon="fa-thumbs-o-up text-success" style="width: 180px:"
+              attrs="{'invisible': [('resultat', '!=', 'satisfait')]}">
+              <field name="result_display" widget="statinfo"/>
+            </button>
+
+            <button name="get_result" type="object" class="oe_stat_button" icon="fa-thumbs-o-down text-warning" style="width: 180px:"
+              attrs="{'invisible': [('resultat', '!=', 'insatisfait')]}">
+              <field name="result_display" widget="statinfo"/>
+            </button>
+
+            <!-- Situation -->
+            <button name="get_situation" type="object" class="oe_stat_button" icon="fa-phone text-success" style="width: 180px:"
+              attrs="{'invisible': [('situation', '!=', 'joignable')]}">
+              <field name="situation_display" widget="statinfo"/>
+            </button>
+
+            <button name="get_situation" type="object" class="oe_stat_button" icon="fa-phone text-warning" style="width: 180px:"
+              attrs="{'invisible': [('situation', '!=', 'injoignable')]}">
+              <field name="situation_display" widget="statinfo"/>
+            </button>
+
             <!-- Nombre de jours de traitement -->
-            <button name="get_jours_traitement" type="object" class="oe_stat_button" icon="fa-calendar text-warning" style="width: 200px;">
+            <button name="get_jours_traitement" type="object" class="oe_stat_button" icon="fa-calendar text-warning" style="width: 180px:">
               <field name="jours_traitement" widget="statinfo"/>
             </button>
 
             <!-- Status de réponse -->
-            <button name="check_response" type="object" class="oe_stat_button" icon="fa-inbox text-info" style="width: 200px;">
+            <button name="check_response" type="object" class="oe_stat_button" icon="fa-inbox text-info" style="width: 180px:">
               <field name="statut_response_display" string="Reponse envoyée" widget="statinfo"/>
             </button>
 
             <!-- Status du ticket -->
             <button name="get_statut" type="object" class="oe_stat_button" icon="fa-battery-quarter text-info"
-              style="width: 200px;" attrs="{'invisible': [('statut', '!=', 'state')]}">
+              style="width: 180px:" attrs="{'invisible': [('statut', '!=', 'state')]}">
               <field name="statut_display" widget="statinfo" clickable="False"/>
             </button>
 
             <button name="get_statut" type="object" class="oe_stat_button" icon="fa-battery-three-quarters text-info" 
-                style="width: 200px;" attrs="{'invisible': [('statut', '!=', 'state_validate_prea')]}">
+                style="width: 180px:" attrs="{'invisible': [('statut', '!=', 'state_traitement_pmo')]}">
               <field name="statut_display" widget="statinfo"/>
             </button>
 
             <button name="get_statut" type="object" class="oe_stat_button" icon="fa-battery-three-quarters text-info" 
-                style="width: 200px;" attrs="{'invisible': [('statut', '!=', 'state_traitement_pmo')]}">
+                style="width: 180px:" attrs="{'invisible': [('statut', '!=', 'state_eval_response_prea')]}">
               <field name="statut_display" widget="statinfo"/>
             </button>
 
             <button name="get_statut" type="object" class="oe_stat_button" icon="fa-battery-three-quarters text-info" 
-                style="width: 200px;" attrs="{'invisible': [('statut', '!=', 'state_eval_response_prea')]}">
-              <field name="statut_display" widget="statinfo"/>
-            </button>
-
-            <button name="get_statut" type="object" class="oe_stat_button" icon="fa-battery-three-quarters text-info" 
-                style="width: 200px;" attrs="{'invisible': [('statut', '!=', 'state_send_response_bpo')]}">
+                style="width: 180px:" attrs="{'invisible': [('statut', '!=', 'state_send_response_bpo')]}">
               <field name="statut_display" widget="statinfo"/>
             </button>
 
             <button name="get_statut" type="object" class="oe_stat_button" icon="fa-battery-full text-success" 
-              style="width: 200px;" attrs="{'invisible': [('statut', '!=', 'state_done_bpo')]}">
+              style="width: 180px:" attrs="{'invisible': [('statut', '!=', 'state_done_bpo')]}">
               <field name="statut_display" widget="statinfo"/>
             </button>
 
             <button name="get_statut" type="object" class="oe_stat_button" icon="fa-window-close text-primary" 
-              style="width: 200px;" attrs="{'invisible': [('closed', '=', False)]}">
+              style="width: 180px:" attrs="{'invisible': [('statut', '!=', 'state_closed_prea')]}">
               <field name="statut_display" widget="statinfo"/>
             </button>
             
             <button name="get_statut" type="object" class="oe_stat_button" icon="fa-ban text-danger" 
-                style="width: 200px;" attrs="{'invisible': [('statut', '!=', 'state_invalid')]}">
+                style="width: 180px:" attrs="{'invisible': [('statut', '!=', 'state_invalid')]}">
                 <field name="statut_display" widget="statinfo"/>
             </button>
 
             <!-- Group Receiver actuel-->
-            <button name="get_actual_group_name" type="object" class="oe_stat_button" icon="fa-group text-danger" style="width: 200px;">
+            <button name="get_actual_group_name" type="object" class="oe_stat_button" icon="fa-group text-danger" style="width: 180px:">
               <field name="actual_group_name" widget="statinfo"/>
             </button>
           </div>
@@ -145,20 +161,20 @@
               <field name="date_appel" readonly="1"/>
               <field name="date_event" readonly="1"/>
               <field name="genre" readonly="1"/>
-              <field name="education_id" readonly="1"/>
-              <field name="tranche_id" readonly="1"/>
+              <field name="education_id" readonly="1" options="{'no_create_edit': True, 'no_create': True, 'no_open': True}"/>
+              <field name="tranche_id" readonly="1" options="{'no_create_edit': True, 'no_create': True, 'no_open': True}"/>
             </group>
 
             <group>
-              <field name="region_id" readonly="1"/>
-              <field name="district_id" readonly="1"/>
-              <field name="commune_id" readonly="1"/>
-              <field name="fokontany_id" readonly="1"/>
-              <field name="composante_id" readonly="1"/>
+              <field name="region_id" readonly="1" options="{'no_create_edit': True, 'no_create': True, 'no_open': True}"/>
+              <field name="district_id" readonly="1" options="{'no_create_edit': True, 'no_create': True, 'no_open': True}"/>
+              <field name="commune_id" readonly="1" options="{'no_create_edit': True, 'no_create': True, 'no_open': True}"/>
+              <field name="fokontany_id" readonly="1" options="{'no_create_edit': True, 'no_create': True, 'no_open': True}"/>
+              <field name="composante_id" readonly="1" options="{'no_create_edit': True, 'no_create': True, 'no_open': True}"/>
             </group>
 
             <group>
-              <field name="categorie_id" readonly="1"/>
+              <field name="categorie_id" readonly="1" options="{'no_create_edit': True, 'no_create': True, 'no_open': True}"/>
             </group>
           </group>
 
@@ -169,7 +185,7 @@
 
           <notebook>
             <page name="Notes" string="Notes">
-              <field name="note_ids" context="{'default_plainte_id':active_id}" widget="one2many_list" attrs="{'readonly':[('statut', '=', 'state_invalid')]}">
+              <field name="note_ids" context="{'default_plainte_id':active_id}" widget="one2many_list" attrs="{'readonly':['|', ('statut', '=', 'state_invalid'), ('statut', '=', 'state_closed_prea')]}">
                 <tree editable="bottom" >
                   <field name="plainte_id" invisible="1"/>
                   <field name="note" string="Notes" />
@@ -186,7 +202,7 @@
               </field>
             </page>
 
-            <page name="Situation" string="Situation Résultat (BPO)">
+            <page name="Situation" string="Situation Résultat (BPO)" attrs="{'invisible': [('statut', '!=', 'state_done_bpo')]}">
               <group>
                 <group>
                   <field name="situation" string="Situation" readonly="1"/>
@@ -275,7 +291,7 @@
     <field name="arch" type="xml">
       <calendar string="Tickets" date_start="date_appel" mode="month" color="commune_id" quick_add="False"> 
         <field name="reference"/>
-        <field name="categorie_id" options="{'no_open': True, 'no_create': True}"/>
+        <field name="categorie_id" options="{'no_create_edit': True, 'no_create': True, 'no_open': True}"/>
         <field name="statut" class="text-warning"/>
         <field name="jours_traitement"/>
         <field name="reponse_envoye" />

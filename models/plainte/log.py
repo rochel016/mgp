@@ -13,13 +13,14 @@ class Log(models.Model):
     notif_sender = fields.Char(string="Notification de l'envoyeur")
     notif_receiver = fields.Char(string="Notification du recepteur")
     statut = fields.Selection([
-        ('state', 'Créé BPO'), # Ticket créé au BPO
-        ('state_validate_prea', 'Validation PREA'), # En validatiton au PREA
-        ('state_traitement_pmo', 'Traitement PMO'), # En traitement ched PMO
-        ('state_eval_response_prea', 'Evaluation PREA'), # EN évaluation chez PREA
-        ('state_send_response_bpo', 'Envoi réponse citoyen'), # Donner la réponse au citoyen par BPO
+        ('state', 'Créé par BPO'), # Ticket créé au BPO
+        ('state_validate_prea', 'A valider par PREA'), # En validatiton au PREA
+        ('state_traitement_pmo', 'A traiter par PMO'), # En traitement ched PMO
+        ('state_eval_response_prea', 'A évaluer par PREA'), # EN évaluation chez PREA
+        ('state_send_response_bpo', 'A traiter par BPO'), # Donner la réponse au citoyen par BPO
         ('state_done_bpo', 'Traité'), # Le traitment du ticket est terminé
         ('state_invalid', 'Invalide'), # Ticket invalide par le PREA (non exploitable)
+        ('state_closed_prea', 'Fermé'), # Ticket fermé par le PREA
     ], string='Status', readonly=True, copy=False, default='state')
 
     group_sender_name = fields.Char("Group", compute="_get_group_sender_name")
