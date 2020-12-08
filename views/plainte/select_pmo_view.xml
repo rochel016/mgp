@@ -8,7 +8,7 @@
             <sheet>
                 <group>
                     <field name="user_pmo_id" options="{'no_create_edit': True, 'no_create': True, 'no_open': True}"
-                       widget="many2one"/>
+                       widget="many2one" string="Utilisateur PMO"/>
                 </group>
                 <footer>
                     <button name="action_send_to_pmo" string="Assigner" type="object" default_focus="1" class="oe_highlight" />

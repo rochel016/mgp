@@ -34,7 +34,6 @@
         <field name="reponse_envoye" invisible="1"/> <!--IMPORTANT -->
         <field name="situation" invisible="1"/> <!--IMPORTANT -->
         <field name="resultat" invisible="1"/> <!--IMPORTANT -->
-
         <header>
           <!--Group receiver of current user ('is_last_group_receiver', '=', False) -->
           <field name="is_last_group_receiver" invisible="1" />
@@ -43,7 +42,7 @@
             string="Envoyer réponse au PREA" 
             confirm="Voulez vous envoyer la réponse au PREA?"
             statuts="state_traitement_pmo"
-            attrs="{'invisible': [('statut', '!=', 'state_traitement_pmo')]}" />
+            attrs="{'invisible': [('statut', '!=', 'state_traitement_pmo')]}"/>
 
           <!-- Status bar -->
           <field name='statut' widget='statusbar' clickable="True" 
@@ -170,7 +169,8 @@
 
           <notebook>
             <page name="Notes" string="Notes">
-              <field name="note_ids" context="{'default_plainte_id':active_id}" widget="one2many_list" attrs="{'readonly':[('statut', '=', 'state_invalid')]}">
+              <field name="note_ids" context="{'default_plainte_id':active_id}" widget="one2many_list" 
+                attrs="{'readonly':[('statut', 'in', ['state','state_invalid','state_closed_prea'])]}">
                 <tree editable="bottom">
                   <field name="plainte_id" invisible="1"/>
                   <field name="note" string="Notes"/>
@@ -178,6 +178,9 @@
               </field>
             </page>
             <page name="Responses" string="Réponse" autofocus="autofocus">
+              <group>
+                <field name="response_completed" attrs="{'readonly': [('response_completed', '=', True)]}"/>
+              </group>
               <field name="reponse_ids" context="{'default_plainte_id':active_id}" widget="one2many_list">
                 <tree editable="bottom">
                   <field name="plainte_id" invisible="1"/>
@@ -201,7 +204,7 @@
     <field name="name">plainte.pmo.kanban.view</field>
     <field name="model">mgp.plainte</field>
     <field name="arch" type="xml">
-      <kanban default_group_by="statut" quick_create="false">
+      <kanban default_group_by="statut" quick_create="false" class="o_kanban_small_column o_kanban_project_tasks">
         <field name="genre" />
         <field name="is_last_group_receiver" />
         <field name="reponse_envoye" />

@@ -82,6 +82,8 @@ class Plainte(models.Model):
         ('insatisfait', 'Non satisfait'),
     ], string="Niveau de satisfaction", readonly=True)
 
+    response_completed = fields.Boolean(string="Si réponse complète", default=False)
+
     statut = fields.Selection([
         ('state', 'Créé par BPO'), # Ticket créé au BPO
         ('state_validate_prea', 'A valider par PREA'), # En validatiton au PREA
@@ -96,6 +98,9 @@ class Plainte(models.Model):
     # Permet d'afficher tous les status sans (kanban) même si c'est vide
     def _expand_states(self, states, domain, order):
         return [key for key, val in type(self).statut.selection]
+
+
+
         # if self.env.user.has_group('mgp.mgp_gouvernance_operateur'):
         #     return [key for key, val in [
         #         ('state', 'Créé par BPO'),
@@ -150,11 +155,11 @@ class Plainte(models.Model):
         """ Renvoie le statut de la réponse"""
         self.statut_response_display = 'Oui' if self.reponse_envoye else 'Non'
 
-    situation_display = fields.Text(compute='get_situation')
+    situation_display = fields.Text(string="Situation", compute='get_situation')
     def get_situation(self):
         self.situation_display = dict(self._fields['situation'].selection).get(self.situation)
 
-    result_display = fields.Text(compute='get_result')
+    result_display = fields.Text(string="Résultat", compute='get_result')
     def get_result(self):
         self.result_display = dict(self._fields['resultat'].selection).get(self.resultat)
 
@@ -740,7 +745,7 @@ class Plainte(models.Model):
         - Conditions supplémentaire: valid si 'injoignable' ou 'satisfait' ou 'insatisfait'
         """
         if self.env.user.has_group('mgp.mgp_gouvernance_prea') \
-            and (self.situation=='injoignable' or self.resultat=='satisfat' or self.resultat=='insatisfat'):
+            and (self.situation=='injoignable' or self.resultat=='satisfat'):
             for rec in self:
                 # 1 - Update ticket state
                 rec.statut = 'state_closed_prea'
@@ -759,8 +764,8 @@ class Plainte(models.Model):
                 self._action_send_sms(rec.id, "Le ticket n° {} a été fermée par le PREA.".format(rec.reference))
         else:
             message = ''
-            if (self.situation!='injoignable' or self.resultat!='satisfat' or self.resultat!='insatisfait'):
-                message = "Impossible de fermer le ticket car au moins le citoyen est injoignable ou bien satisfait ou non satisfait"
+            if (self.situation!='injoignable' or self.resultat!='satisfat'):
+                message = "Impossible de fermer le ticket car lorsqu'il est injoignable ou bien satisfait"
             else:
                 message = "Seul l'administrateur PREA peut fermer un ticket."
             
@@ -774,7 +779,7 @@ class Plainte(models.Model):
                     'sticky': False,
                 },
             }
-
+    
     #-----------------------------------------------------------
     #-------------------- Workflow ACTIONS PMO -----------------
     #-----------------------------------------------------------
@@ -785,6 +790,18 @@ class Plainte(models.Model):
         - Desc: Envoyer la réponse au PREA
         - From PMO to PREA
         """
+        if not self.response_completed:
+            return {
+                'type': 'ir.actions.client',
+                'tag': 'display_notification',
+                'params': {
+                    'title': _("Envoi réponse au PREA"),
+                    'message': _("Vous devez cocher <si réponse complète> et sauvegarder le ticket avant d'éffectuer cette opération"),
+                    'type':'danger',  
+                    'sticky': False,
+                },
+            }
+
         if not self.reponse_ids:
             return {
                 'type': 'ir.actions.client',

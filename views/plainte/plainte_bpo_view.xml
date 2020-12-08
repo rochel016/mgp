@@ -57,28 +57,28 @@
             string="Citoyen joignable" 
             confirm="Voulez vous informer le PREA que le citoyen a été joignable ?"
             statuts="state_send_response_bpo"
-            attrs="{'invisible': [('statut', '!=', 'state_send_response_bpo')]}"/>
+            attrs="{'invisible': ['|', ('statut', '!=', 'state_send_response_bpo'), ('situation', 'in', ['joignable', 'injoignable'])]}"/>
           
           <button name="action_injoignable" type="object" class="oe_highlight"
             string="Citoyen injoignable" 
             confirm="Voulez vous informer le PREA que le citoyen est injoignable ?"
             statuts="state_send_response_bpo"
-            attrs="{'invisible': [('statut', '!=', 'state_send_response_bpo')]}"/>
+            attrs="{'invisible': ['|', ('statut', '!=', 'state_send_response_bpo'), ('situation', 'in', ['joignable', 'injoignable'])]}"/>
 
           <!-- Retour PREA: ATTENTE DE SATISFACTION-->
           <button name="action_satisfait" type="object" class="oe_highlight"
             string="Citoyen satisfait" 
             confirm="Voulez vous informer le PREA que le citoyen est satisfait ?"
-            statuts="state_done_bpo"
-            attrs="{'invisible': ['|', ('situation', '!=', 'injoignable'), 
-              ('resultat', '!=', 'satisfait'), ('resultat', '!=', 'insatisfait')]}"/>
+            statuts="state_send_response_bpo"
+            attrs="{'invisible': ['|', ('situation', '!=', 'joignable'), 
+              ('resultat', 'in', ['satisfait', 'insatisfait'])]}"/>
           
           <button name="action_non_satisfait" type="object" class="oe_highlight"
             string="Citoyen non satisfait" 
             confirm="Voulez vous informer le PREA que le citoyen n'est pas satisfait ?"
-            statuts="state_done_bpo"
-            attrs="{'invisible': ['|', ('situation', '!=', 'injoignable'), 
-              ('resultat', '!=', 'satisfait'), ('resultat', '!=', 'insatisfait')]}"/>
+            statuts="state_send_response_bpo"
+            attrs="{'invisible': ['|', ('situation', '!=', 'joignable'), 
+              ('resultat', 'in', ['satisfait', 'insatisfait'])]}"/>
           
           <!-- Status bar -->
           <field name='statut' widget='statusbar' clickable="True" 
@@ -188,60 +188,62 @@
               <field name="check_write_resultat_situation" invisible="1" />
 
               <field name="date_appel" 
-                attrs="{'readonly':['|', ('check_write', '=', True), ('statut', '=', 'state_invalid')]}"/>
+                attrs="{'readonly':['|', ('check_write', '=', True), ('statut', '!=', 'state')]}"/>
 
               <field name="date_event" 
-                attrs="{'readonly':['|', ('check_write', '=', True), ('statut', '=', 'state_invalid')]}"/>
+                attrs="{'readonly':['|', ('check_write', '=', True), ('statut', '!=', 'state')]}"/>
 
               <field name="genre" placeholder="Seléctionner le genre" 
-                attrs="{'readonly':['|', ('check_write', '=', True), ('statut', '=', 'state_invalid')]}"/>
+                attrs="{'readonly':['|', ('check_write', '=', True), ('statut', '!=', 'state')]}"/>
 
               <field name="education_id" placeholder="Seléctionner le niveau d'éducation"
                 options="{'no_create_edit': True, 'no_create': True, 'no_open': True}"
-                attrs="{'readonly':['|', ('check_write', '=', True), ('statut', '=', 'state_invalid')]}"/>
+                attrs="{'readonly':['|', ('check_write', '=', True), ('statut', '!=', 'state')]}"/>
 
               <field name="tranche_id" placeholder="Seléctionner la tranche d'âge"
                 options="{'no_create_edit': True, 'no_create': True, 'no_open': True}"
-                attrs="{'readonly':['|', ('check_write', '=', True), ('statut', '=', 'state_invalid')]}"/>
+                attrs="{'readonly':['|', ('check_write', '=', True), ('statut', '!=', 'state')]}"/>
               
               <field name="categorie_id" placeholder="Seléctionner la catégorie de plainte" 
                 options="{'no_create_edit': True, 'no_create': True, 'no_open': True}"
-                attrs="{'readonly':['|', ('check_write', '=', True), ('statut', '=', 'state_invalid')]}"/>
+                attrs="{'readonly':['|', ('check_write', '=', True), ('statut', '!=', 'state')]}"/>
             </group>
 
             <group>
-              <field name="tel" placeholder="Champs téléphone multiple séparé par point virgule" style="color:Blue;" />
+              <field name="tel" placeholder="Champs téléphone multiple séparé par point virgule" style="color:Blue;" 
+               attrs="{'readonly':[('statut', '!=', 'state')]}"/>
 
               <field name="region_id" placeholder="Seléctionner la région"
                 options="{'no_create_edit': True, 'no_create': True, 'no_open': True}" 
-                attrs="{'readonly':['|', ('check_write', '=', True), ('statut', '=', 'state_invalid')]}"/>
+                attrs="{'readonly':['|', ('check_write', '=', True), ('statut', '!=', 'state')]}"/>
 
               <field name="district_id" placeholder="Seléctionner le district"
                 options="{'no_create_edit': True, 'no_create': True, 'no_open': True}" 
-                attrs="{'readonly':['|', ('check_write', '=', True), ('statut', '=', 'state_invalid')]}"/>
+                attrs="{'readonly':['|', ('check_write', '=', True), ('statut', '!=', 'state')]}"/>
 
               <field name="commune_id" placeholder="Seléctionner la commune"
                 options="{'no_create_edit': True, 'no_create': True, 'no_open': True}" 
-                attrs="{'readonly':['|', ('check_write', '=', True), ('statut', '=', 'state_invalid')]}"/>
+                attrs="{'readonly':['|', ('check_write', '=', True), ('statut', '!=', 'state')]}"/>
               
               <field name="fokontany_id" placeholder="Seléctionner le fokontany (facultatif)"
                 options="{'no_create_edit': True, 'no_create': True, 'no_open': True}"
-                attrs="{'readonly':['|', ('check_write', '=', True), ('statut', '=', 'state_invalid')]}"/>
+                attrs="{'readonly':['|', ('check_write', '=', True), ('statut', '!=', 'state')]}"/>
               
               <field name="composante_id" placeholder="Seléctionner la composante de la plainte"
                 options="{'no_create_edit': True, 'no_create': True, 'no_open': True}"
-                attrs="{'readonly':['|', ('check_write', '=', True), ('statut', '=', 'state_invalid')]}"/>
+                attrs="{'readonly':['|', ('check_write', '=', True), ('statut', '!=', 'state')]}"/>
             </group>
           </group>
 
           <group>  
             <field name="ennonce" string="Description" placeholder="Exposez ici l'ennoncé de la plainte"
-              attrs="{'readonly':['|', ('check_write', '=', True), ('statut', '=', 'state_invalid')]}"/>
+              attrs="{'readonly':['|', ('check_write', '=', True), ('statut', '!=', 'state')]}"/>
           </group>
 
           <notebook>
             <page name="Notes" string="Notes">
-              <field name="note_ids" context="{'default_plainte_id':active_id}" widget="one2many_list" attrs="{'readonly':[('statut', '=', 'state_invalid')]}">
+              <field name="note_ids" context="{'default_plainte_id':active_id}" widget="one2many_list" 
+                attrs="{'readonly':[('statut', 'in', ['state_invalid','state_closed_prea'])]}">
                 <tree editable="bottom" >
                   <field name="plainte_id" invisible="1"/>
                   <field name="note" string="Notes" />
@@ -278,8 +280,7 @@
       <kanban default_group_by="statut" quick_create="false" class="o_kanban_small_column o_kanban_project_tasks">
         <field name="genre" /><!--Important-->
         <field name="is_last_group_receiver"/>
-        <field name="reponse_envoye" />
-        <field name="statut" />
+        <field name="statut"/>
         <templates>
           <t t-name="kanban-box" class="backgrou">
             <div class="oe_kanban_global_click">
