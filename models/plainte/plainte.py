@@ -73,16 +73,14 @@ class Plainte(models.Model):
     ennonce = fields.Text(string="Plainte et Doléance", required=True)
 
     situation = fields.Selection([
-        ('joignable', 'le client a été joingnable'),
-        ('injoignable', 'Le client est injoignable'),
+        ('joignable', 'joignable'),
+        ('injoignable', 'injoignable'),
     ], string="situation", readonly=True)
 
     resultat = fields.Selection([
         ('satisfait', 'Satisfait'),
-        ('insatisfait', 'Non satisfait'),
+        ('insatisfait', 'Insatisfait'),
     ], string="Niveau de satisfaction", readonly=True)
-
-    response_completed = fields.Boolean(string="Si réponse complète", default=False)
 
     statut = fields.Selection([
         ('state', 'Créé par BPO'), # Ticket créé au BPO
@@ -127,7 +125,7 @@ class Plainte(models.Model):
     reponse_ids = fields.One2many('mgp.plainte_reponse', 'plainte_id', string='Réponses')
     
     # Si laréponse est envoyée
-    reponse_envoye = fields.Boolean(default=False, string="Réponse envoyée")
+    reponse_envoye = fields.Boolean(default=True, string="Réponse envoyée")
 
     # L'utilisasteur PMO qui pourrait reçevoir ce ticket (nullable) 
     user_pmo_id = fields.Many2one('res.users', ondelete='cascade', string="User PMO",
@@ -250,7 +248,7 @@ class Plainte(models.Model):
         """ Le téléphone ne contient que des chiffres, séparé par point virgule """
         for rec in self:
             if len(rec.tel) != 10 or not re.match(r"^[0-9;]+$", rec.tel):
-                raise ValidationError(_("Le numéro doit être chiffre et de 10 digits"))
+                raise ValidationError(_("Le numéro doit être en chiffre et de 10 digits"))
                 # ??? return {
                 #     'type': 'ir.actions.client',
                 #     'tag': 'display_notification',
@@ -585,18 +583,20 @@ class Plainte(models.Model):
         if self.env.user.has_group('mgp.mgp_gouvernance_operateur'):
             for rec in self:
                 # 1 - Update ticket state
-                rec.statut = 'state_eval_response_prea'
-                rec.resultat = 'insatisfait'
+                rec.statut = 'state_validate_prea'
+                rec.resultat = None # TRES IMPORTANT
+                rec.reponse_envoye = False # TRES IMPORTANT
+                rec.situation = None # TRES IMPORTANT
             
                 # 2 - Log : Renvoi du ticket au PREA
                 self._do_log(
                     plainte_id = rec.id,
                     group_sender_id = self.env.ref('mgp.mgp_gouvernance_operateur').id,
                     group_receiver_id = self.env.ref('mgp.mgp_gouvernance_prea').id,
-                    action = "Renvoi du ticket au PREA",
+                    action = "Renvoi du ticket au PREA (insatisfaction)",
                     statut = "state_eval_response_prea",
-                    notif_sender = "Ticket renvoyé au PREA",
-                    notif_receiver = "Le ticket est renvoyé à cause de non satisfaction")
+                    notif_sender = "Ticket renvoyé au PREA pour retraitement",
+                    notif_receiver = "Le ticket est renvoyé pour retraitement au niveau du PMO")
                 
                 # 3 - Envoyer un message au tiket (réponse)
                 self._action_send_sms(rec.id, "Le citoyen ayant le ticket n° {} est non satisfait.".format(rec.reference))
@@ -745,7 +745,7 @@ class Plainte(models.Model):
         - Conditions supplémentaire: valid si 'injoignable' ou 'satisfait' ou 'insatisfait'
         """
         if self.env.user.has_group('mgp.mgp_gouvernance_prea') \
-            and (self.situation=='injoignable' or self.resultat=='satisfat'):
+            and (self.situation=='injoignable' or self.resultat=='satisfait'):
             for rec in self:
                 # 1 - Update ticket state
                 rec.statut = 'state_closed_prea'
@@ -765,7 +765,7 @@ class Plainte(models.Model):
         else:
             message = ''
             if (self.situation!='injoignable' or self.resultat!='satisfat'):
-                message = "Impossible de fermer le ticket car lorsqu'il est injoignable ou bien satisfait"
+                message = "Impossible de fermer le ticket que lorsqu'il est injoignable ou bien satisfait"
             else:
                 message = "Seul l'administrateur PREA peut fermer un ticket."
             
@@ -790,17 +790,17 @@ class Plainte(models.Model):
         - Desc: Envoyer la réponse au PREA
         - From PMO to PREA
         """
-        if not self.response_completed:
-            return {
-                'type': 'ir.actions.client',
-                'tag': 'display_notification',
-                'params': {
-                    'title': _("Envoi réponse au PREA"),
-                    'message': _("Vous devez cocher <si réponse complète> et sauvegarder le ticket avant d'éffectuer cette opération"),
-                    'type':'danger',  
-                    'sticky': False,
-                },
-            }
+        if not self.reponse_envoye:
+                return {
+                    'type': 'ir.actions.client',
+                    'tag': 'display_notification',
+                    'params': {
+                        'title': _("Envoi réponse au PREA"),
+                        'message': _("Vous devez cocher <si réponse complète> et sauvegarder le ticket avant d'éffectuer cette opération"),
+                        'type':'danger',  
+                        'sticky': False,
+                    },
+                }
 
         if not self.reponse_ids:
             return {

@@ -54,27 +54,27 @@
 
           <!-- Retour PREA: JOINDRE LE CLIEN PAR TELEPHONE-->
           <button name="action_joignable" type="object" class="oe_highlight" 
-            string="Citoyen joignable" 
+            string="Joignable" 
             confirm="Voulez vous informer le PREA que le citoyen a été joignable ?"
             statuts="state_send_response_bpo"
             attrs="{'invisible': ['|', ('statut', '!=', 'state_send_response_bpo'), ('situation', 'in', ['joignable', 'injoignable'])]}"/>
           
           <button name="action_injoignable" type="object" class="oe_highlight"
-            string="Citoyen injoignable" 
+            string="Injoignable" 
             confirm="Voulez vous informer le PREA que le citoyen est injoignable ?"
             statuts="state_send_response_bpo"
             attrs="{'invisible': ['|', ('statut', '!=', 'state_send_response_bpo'), ('situation', 'in', ['joignable', 'injoignable'])]}"/>
 
           <!-- Retour PREA: ATTENTE DE SATISFACTION-->
           <button name="action_satisfait" type="object" class="oe_highlight"
-            string="Citoyen satisfait" 
+            string="Satisfait" 
             confirm="Voulez vous informer le PREA que le citoyen est satisfait ?"
             statuts="state_send_response_bpo"
             attrs="{'invisible': ['|', ('situation', '!=', 'joignable'), 
               ('resultat', 'in', ['satisfait', 'insatisfait'])]}"/>
           
           <button name="action_non_satisfait" type="object" class="oe_highlight"
-            string="Citoyen non satisfait" 
+            string="Non satisfait" 
             confirm="Voulez vous informer le PREA que le citoyen n'est pas satisfait ?"
             statuts="state_send_response_bpo"
             attrs="{'invisible': ['|', ('situation', '!=', 'joignable'), 
@@ -89,80 +89,80 @@
           <!-- Widget statinfo -->
           <div class="oe_button_box" name="button_box">
             <!-- Résultat -->
-            <button name="get_result" type="object" class="oe_stat_button" icon="fa-thumbs-o-up text-success" style="width: 180px:"
+            <button name="get_result" type="object" class="oe_stat_button" icon="fa-thumbs-o-up text-success" style="width: 1600px:"
               attrs="{'invisible': [('resultat', '!=', 'satisfait')]}">
               <field name="result_display" widget="statinfo"/>
             </button>
 
-            <button name="get_result" type="object" class="oe_stat_button" icon="fa-thumbs-o-down text-warning" style="width: 180px:"
+            <button name="get_result" type="object" class="oe_stat_button" icon="fa-thumbs-o-down text-warning" style="width: 1600px:"
               attrs="{'invisible': [('resultat', '!=', 'insatisfait')]}">
               <field name="result_display" widget="statinfo"/>
             </button>
 
             <!-- Situation -->
-            <button name="get_situation" type="object" class="oe_stat_button" icon="fa-phone text-success" style="width: 180px:"
+            <button name="get_situation" type="object" class="oe_stat_button" icon="fa-phone text-success" style="width: 1600px:"
               attrs="{'invisible': [('situation', '!=', 'joignable')]}">
               <field name="situation_display" widget="statinfo"/>
             </button>
 
-            <button name="get_situation" type="object" class="oe_stat_button" icon="fa-phone text-warning" style="width: 180px:"
+            <button name="get_situation" type="object" class="oe_stat_button" icon="fa-phone text-warning" style="width: 160px:"
               attrs="{'invisible': [('situation', '!=', 'injoignable')]}">
               <field name="situation_display" widget="statinfo"/>
             </button>
 
             <!-- Nombre de jours de traitement -->
-            <button name="get_jours_traitement" type="object" class="oe_stat_button" icon="fa-calendar text-warning" style="width: 180px:">
+            <button name="get_jours_traitement" type="object" class="oe_stat_button" icon="fa-calendar text-warning" style="width: 200px:">
               <field name="jours_traitement" widget="statinfo"/>
             </button>
 
             <!-- Status de réponse -->
-            <button name="check_response" type="object" class="oe_stat_button" icon="fa-inbox text-info" style="width: 180px:">
+            <button name="check_response" type="object" class="oe_stat_button" icon="fa-inbox text-info" style="width: 200px:">
               <field name="statut_response_display" string="Reponse envoyée" widget="statinfo"/>
             </button>
 
             <!-- Status du ticket -->
             <button name="get_statut" type="object" class="oe_stat_button" icon="fa-battery-quarter text-info"
-              style="width: 180px:" attrs="{'invisible': [('statut', '!=', 'state')]}">
+              style="width: 200px:" attrs="{'invisible': [('statut', '!=', 'state')]}">
               <field name="statut_display" widget="statinfo" clickable="False"/>
             </button>
 
             <button name="get_statut" type="object" class="oe_stat_button" icon="fa-battery-three-quarters text-info" 
-                style="width: 180px:" attrs="{'invisible': [('statut', '!=', 'state_validate_prea')]}">
+                style="width: 200px:" attrs="{'invisible': [('statut', '!=', 'state_validate_prea')]}">
               <field name="statut_display" widget="statinfo"/>
             </button>
 
             <button name="get_statut" type="object" class="oe_stat_button" icon="fa-battery-three-quarters text-info" 
-                style="width: 180px:" attrs="{'invisible': [('statut', '!=', 'state_traitement_pmo')]}">
+                style="width: 200px:" attrs="{'invisible': [('statut', '!=', 'state_traitement_pmo')]}">
               <field name="statut_display" widget="statinfo"/>
             </button>
 
             <button name="get_statut" type="object" class="oe_stat_button" icon="fa-battery-three-quarters text-info" 
-                style="width: 180px:" attrs="{'invisible': [('statut', '!=', 'state_eval_response_prea')]}">
+                style="width: 200px:" attrs="{'invisible': [('statut', '!=', 'state_eval_response_prea')]}">
               <field name="statut_display" widget="statinfo"/>
             </button>
 
             <button name="get_statut" type="object" class="oe_stat_button" icon="fa-battery-three-quarters text-info" 
-                style="width: 180px:" attrs="{'invisible': [('statut', '!=', 'state_send_response_bpo')]}">
+                style="width: 200px:" attrs="{'invisible': [('statut', '!=', 'state_send_response_bpo')]}">
               <field name="statut_display" widget="statinfo"/>
             </button>
 
             <button name="get_statut" type="object" class="oe_stat_button" icon="fa-battery-full text-success" 
-              style="width: 180px:" attrs="{'invisible': [('statut', '!=', 'state_done_bpo')]}">
+              style="width: 200px:" attrs="{'invisible': [('statut', '!=', 'state_done_bpo')]}">
               <field name="statut_display" widget="statinfo"/>
             </button>
 
             <button name="get_statut" type="object" class="oe_stat_button" icon="fa-window-close text-primary" 
-              style="width: 180px:" attrs="{'invisible': [('statut', '!=', 'state_closed_prea')]}">
+              style="width: 200px:" attrs="{'invisible': [('statut', '!=', 'state_closed_prea')]}">
               <field name="statut_display" widget="statinfo"/>
             </button>
             
             <button name="get_statut" type="object" class="oe_stat_button" icon="fa-ban text-danger" 
-                style="width: 180px:" attrs="{'invisible': [('statut', '!=', 'state_invalid')]}">
+                style="width: 200px:" attrs="{'invisible': [('statut', '!=', 'state_invalid')]}">
                 <field name="statut_display" widget="statinfo"/>
             </button>
 
             <!-- Group Receiver actuel-->
-            <button name="get_actual_group_name" type="object" class="oe_stat_button" icon="fa-group text-danger" style="width: 180px:">
+            <button name="get_actual_group_name" type="object" class="oe_stat_button" icon="fa-group text-danger" style="width: 200px:">
               <field name="actual_group_name" widget="statinfo"/>
             </button>
           </div>

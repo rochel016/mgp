@@ -12,7 +12,8 @@
     # 'category': 'Gouvernance',
     'version': '0.1',
     'depends': ['base', 'mail'],
-    'qweb': ['static/src/xml/icon_systray.xml'],
+    'qweb': [
+        'static/src/xml/icon_systray.xml'],
     'data': [
         # Security
         "security/security.xml",
