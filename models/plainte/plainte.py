@@ -12,11 +12,11 @@ class Plainte(models.Model):
     _rec_name = 'reference' # Sur la navigation 
 
     reference = fields.Char(string="Plainte No", readonly=True, required=True, copy=False, default= 'NOUVEAU')
-    date_appel = fields.Datetime(string="Date d'appel", required=True, default=datetime.now())
+    date_appel = fields.Datetime(string="Date d'appel", required=True, default=datetime.now(), copy=False)
     date_event = fields.Datetime(string="Date d'événement")
     
     # Contact et Localisation
-    tel = fields.Char(string="Tél", required=True)
+    tel = fields.Char(string="Tél", required=True, copy=False)
 
     def _get_default_region(self):
         """
@@ -75,7 +75,7 @@ class Plainte(models.Model):
     situation = fields.Selection([
         ('joignable', 'joignable'),
         ('injoignable', 'injoignable'),
-    ], string="situation", readonly=True)
+    ], string="Situation", readonly=True)
 
     resultat = fields.Selection([
         ('satisfait', 'Satisfait'),
@@ -96,7 +96,10 @@ class Plainte(models.Model):
     # Permet d'afficher tous les status sans (kanban) même si c'est vide
     def _expand_states(self, states, domain, order):
         return [key for key, val in type(self).statut.selection]
-
+        # if self.env.user.has_group('mgp.mgp_gouvernance_operateur'):
+        #     return [('state', 'Créé par BPO'),
+        #             ('state_send_response_bpo', 'A traiter par BPO'),
+        #             ('state_done_bpo', 'Traité')]
 
 
         # if self.env.user.has_group('mgp.mgp_gouvernance_operateur'):
@@ -125,7 +128,7 @@ class Plainte(models.Model):
     reponse_ids = fields.One2many('mgp.plainte_reponse', 'plainte_id', string='Réponses')
     
     # Si laréponse est envoyée
-    reponse_envoye = fields.Boolean(default=True, string="Réponse envoyée")
+    response_complete = fields.Boolean(default=False, string="Réponse complète")
 
     # L'utilisasteur PMO qui pourrait reçevoir ce ticket (nullable) 
     user_pmo_id = fields.Many2one('res.users', ondelete='cascade', string="User PMO",
@@ -151,7 +154,7 @@ class Plainte(models.Model):
     statut_response_display = fields.Text(strin="Réponse envoyée", compute='check_response')
     def check_response(self):
         """ Renvoie le statut de la réponse"""
-        self.statut_response_display = 'Oui' if self.reponse_envoye else 'Non'
+        self.statut_response_display = 'Oui' if self.response_complete else 'Non'
 
     situation_display = fields.Text(string="Situation", compute='get_situation')
     def get_situation(self):
@@ -230,7 +233,7 @@ class Plainte(models.Model):
         if self.env.user.has_group('mgp.mgp_gouvernance_operateur') and self.user_pmo_id and self.statut != 'state_invalid':
             # Chercher le dernier log de l'instance en cours
             last_sender = self._get_last_user_sender()
-            if last_sender and self.env.uid == last_sender.id and self.reponse_envoye==True:
+            if last_sender and self.env.uid == last_sender.id and self.response_complete==True:
                 self.check_write_resultat_situation = True
             
     is_group_pmo = fields.Boolean(compute='_is_group_pmo')
@@ -585,7 +588,7 @@ class Plainte(models.Model):
                 # 1 - Update ticket state
                 rec.statut = 'state_validate_prea'
                 rec.resultat = None # TRES IMPORTANT
-                rec.reponse_envoye = False # TRES IMPORTANT
+                rec.response_complete = False # TRES IMPORTANT
                 rec.situation = None # TRES IMPORTANT
             
                 # 2 - Log : Renvoi du ticket au PREA
@@ -710,7 +713,7 @@ class Plainte(models.Model):
 
                 # 1 - Update ticket state
                 rec.statut = 'state_send_response_bpo'
-                rec.reponse_envoye = True
+                rec.response_complete = True
             
                 # 2 - Log : Envoi réponse
                 self._do_log(
@@ -790,7 +793,7 @@ class Plainte(models.Model):
         - Desc: Envoyer la réponse au PREA
         - From PMO to PREA
         """
-        if not self.reponse_envoye:
+        if not self.response_complete:
                 return {
                     'type': 'ir.actions.client',
                     'tag': 'display_notification',
@@ -830,7 +833,7 @@ class Plainte(models.Model):
 
                 # 1 - Update ticket state and response
                 rec.statut = 'state_eval_response_prea'
-                rec.reponse_envoye = True
+                rec.response_complete = True
             
                 # 2 - Log : Envoi réponse
                 self._do_log(
@@ -915,8 +918,12 @@ class Plainte(models.Model):
     # ---------- Assigner ticket à un user du PMO -----------
     # -------------------------------------------------------
     def assigner_tiket_user_pmo(self):
+        title = 'Assigner le ticket n°{} à un utilisateur du PMO'.format(self.reference)
+        if self.user_pmo_id:
+            title = "Re-assigner le ticket n°{} à ".format(self.reference)
+
         return {
-            'name':'Assigner le ticket à un utilisateur du PMO',
+            'name': title,
             'res_model':'mgp.plainte',
             'view_mode':'form',
             'res_id':self.id,

@@ -21,13 +21,4 @@ class Log(models.Model):
         ('state_done_bpo', 'Traité'), # Le traitment du ticket est terminé
         ('state_invalid', 'Invalide'), # Ticket invalide par le PREA (non exploitable)
         ('state_closed_prea', 'Fermé'), # Ticket fermé par le PREA
-    ], string='Status', readonly=True, copy=False, default='state')
-
-    group_sender_name = fields.Char("Group", compute="_get_group_sender_name")
-    @api.depends('group_sender_id')
-    def _get_group_sender_name(self):
-        for rec in self:
-            if rec.group_sender_id:
-                self.group_sender_name = rec.group_sender_id.name
-
-    
+    ], string='Status', readonly=True, copy=False, default='state')  

@@ -12,6 +12,37 @@
     <field name="implementation">standard</field>
   </record>
 
+  <record id="plainte_bpo_view_search" model="ir.ui.view">
+    <field name="name">plainte.view.search</field>
+    <field name="model">mgp.plainte</field>
+    <field name="arch" type="xml">
+      <search string="Recherche des tickets">
+        <field name="reference" string="Ticket n°"/>
+        <field name="date_appel"/>
+        <field name="tel"/>
+
+        <separator string="Statut"/>
+        <filter string='Tickets créés' name='state' domain="[('statut', '=', 'state')]"/>
+        <filter string='Tickets à traiter' name='state_send_response_bpo' domain="[('statut', '=', 'state_send_response_bpo')]"/>
+        <filter string='Ticktes traités' name='state_done_bpo' domain="[('statut', '=', 'state_done_bpo')]"/>
+
+        <separator string="Situation"/>
+        <filter string='Joignable' name='Joignable' domain="[('situation', '=', 'joignable')]"/>
+        <filter string='Injoignable' name='Injoignable' domain="[('situation', '=', 'injoignable')]"/>
+
+        <separator string="Résultat"/>
+        <filter string='Satisfait' name='Satisfait' domain="[('resultat', '=', 'satisfait')]"/>
+        <filter string='Non satisfait' name='insatisfait' domain="[('resultat', '=', 'insatisfait')]"/>
+
+        <group expand="0" string="Group By">
+          <filter string='Statut' name='statut' context="{'group_by':'statut'}"/>
+          <filter string='Situation' name='situation' context="{'group_by':'situation'}"/>
+          <filter string='Resultat' name='resultat' context="{'group_by':'resultat'}"/>
+        </group>
+      </search>
+    </field>
+  </record>
+
   <!-- explicit list view definition -->
   <record id="plainte_bpo_list_view" model="ir.ui.view">
     <field name="name">Plaintes.list</field>
@@ -41,7 +72,7 @@
     <field name="model">mgp.plainte</field>
     <field name="arch" type="xml">
       <form>
-        <field name="reponse_envoye" invisible="1"/> <!--IMPORTANT -->
+        <field name="response_complete" invisible="1"/> <!--IMPORTANT -->
         <header>
           <!--Group receiver of current user ('is_last_group_receiver', '=', False) -->
           <field name="is_last_group_receiver" invisible="1" />
@@ -89,80 +120,81 @@
           <!-- Widget statinfo -->
           <div class="oe_button_box" name="button_box">
             <!-- Résultat -->
-            <button name="get_result" type="object" class="oe_stat_button" icon="fa-thumbs-o-up text-success" style="width: 1600px:"
+            <button name="get_result" type="object" class="oe_stat_button" icon="fa-thumbs-o-up text-success" style="width: 100px"
               attrs="{'invisible': [('resultat', '!=', 'satisfait')]}">
               <field name="result_display" widget="statinfo"/>
             </button>
 
-            <button name="get_result" type="object" class="oe_stat_button" icon="fa-thumbs-o-down text-warning" style="width: 1600px:"
+            <button name="get_result" type="object" class="oe_stat_button" icon="fa-thumbs-o-down text-warning" style="width: 100px"
               attrs="{'invisible': [('resultat', '!=', 'insatisfait')]}">
               <field name="result_display" widget="statinfo"/>
             </button>
 
             <!-- Situation -->
-            <button name="get_situation" type="object" class="oe_stat_button" icon="fa-phone text-success" style="width: 1600px:"
+            <button name="get_situation" type="object" class="oe_stat_button" icon="fa-phone text-success" style="width: 100px"
               attrs="{'invisible': [('situation', '!=', 'joignable')]}">
               <field name="situation_display" widget="statinfo"/>
             </button>
 
-            <button name="get_situation" type="object" class="oe_stat_button" icon="fa-phone text-warning" style="width: 160px:"
+            <button name="get_situation" type="object" class="oe_stat_button" icon="fa-phone text-warning" style="width: 100px"
               attrs="{'invisible': [('situation', '!=', 'injoignable')]}">
               <field name="situation_display" widget="statinfo"/>
             </button>
 
             <!-- Nombre de jours de traitement -->
-            <button name="get_jours_traitement" type="object" class="oe_stat_button" icon="fa-calendar text-warning" style="width: 200px:">
+            <button name="get_jours_traitement" type="object" class="oe_stat_button" icon="fa-calendar text-warning" style="width: 200px">
               <field name="jours_traitement" widget="statinfo"/>
             </button>
 
             <!-- Status de réponse -->
-            <button name="check_response" type="object" class="oe_stat_button" icon="fa-inbox text-info" style="width: 200px:">
+            <button name="check_response" type="object" class="oe_stat_button" icon="fa-inbox text-info" style="width: 200px"
+              attrs="{'invisible': [('response_complete', '=', False)]}">
               <field name="statut_response_display" string="Reponse envoyée" widget="statinfo"/>
             </button>
 
             <!-- Status du ticket -->
             <button name="get_statut" type="object" class="oe_stat_button" icon="fa-battery-quarter text-info"
-              style="width: 200px:" attrs="{'invisible': [('statut', '!=', 'state')]}">
+              style="width: 200px" attrs="{'invisible': [('statut', '!=', 'state')]}">
               <field name="statut_display" widget="statinfo" clickable="False"/>
             </button>
 
             <button name="get_statut" type="object" class="oe_stat_button" icon="fa-battery-three-quarters text-info" 
-                style="width: 200px:" attrs="{'invisible': [('statut', '!=', 'state_validate_prea')]}">
+                style="width: 200px" attrs="{'invisible': [('statut', '!=', 'state_validate_prea')]}">
               <field name="statut_display" widget="statinfo"/>
             </button>
 
             <button name="get_statut" type="object" class="oe_stat_button" icon="fa-battery-three-quarters text-info" 
-                style="width: 200px:" attrs="{'invisible': [('statut', '!=', 'state_traitement_pmo')]}">
+                style="width: 200px" attrs="{'invisible': [('statut', '!=', 'state_traitement_pmo')]}">
               <field name="statut_display" widget="statinfo"/>
             </button>
 
             <button name="get_statut" type="object" class="oe_stat_button" icon="fa-battery-three-quarters text-info" 
-                style="width: 200px:" attrs="{'invisible': [('statut', '!=', 'state_eval_response_prea')]}">
+                style="width: 200px" attrs="{'invisible': [('statut', '!=', 'state_eval_response_prea')]}">
               <field name="statut_display" widget="statinfo"/>
             </button>
 
             <button name="get_statut" type="object" class="oe_stat_button" icon="fa-battery-three-quarters text-info" 
-                style="width: 200px:" attrs="{'invisible': [('statut', '!=', 'state_send_response_bpo')]}">
+                style="width: 200px" attrs="{'invisible': [('statut', '!=', 'state_send_response_bpo')]}">
               <field name="statut_display" widget="statinfo"/>
             </button>
 
             <button name="get_statut" type="object" class="oe_stat_button" icon="fa-battery-full text-success" 
-              style="width: 200px:" attrs="{'invisible': [('statut', '!=', 'state_done_bpo')]}">
+              style="width: 200px" attrs="{'invisible': [('statut', '!=', 'state_done_bpo')]}">
               <field name="statut_display" widget="statinfo"/>
             </button>
 
             <button name="get_statut" type="object" class="oe_stat_button" icon="fa-window-close text-primary" 
-              style="width: 200px:" attrs="{'invisible': [('statut', '!=', 'state_closed_prea')]}">
+              style="width: 200px" attrs="{'invisible': [('statut', '!=', 'state_closed_prea')]}">
               <field name="statut_display" widget="statinfo"/>
             </button>
             
             <button name="get_statut" type="object" class="oe_stat_button" icon="fa-ban text-danger" 
-                style="width: 200px:" attrs="{'invisible': [('statut', '!=', 'state_invalid')]}">
+                style="width: 200px" attrs="{'invisible': [('statut', '!=', 'state_invalid')]}">
                 <field name="statut_display" widget="statinfo"/>
             </button>
 
             <!-- Group Receiver actuel-->
-            <button name="get_actual_group_name" type="object" class="oe_stat_button" icon="fa-group text-danger" style="width: 200px:">
+            <button name="get_actual_group_name" type="object" class="oe_stat_button" icon="fa-group text-danger" style="width: 200px">
               <field name="actual_group_name" widget="statinfo"/>
             </button>
           </div>
@@ -236,7 +268,7 @@
           </group>
 
           <group>  
-            <field name="ennonce" string="Description" placeholder="Exposez ici l'ennoncé de la plainte"
+            <field name="ennonce" string="Plainte/Doléance" placeholder="Exposez ici l'ennoncé de la plainte"
               attrs="{'readonly':['|', ('check_write', '=', True), ('statut', '!=', 'state')]}"/>
           </group>
 
@@ -247,6 +279,7 @@
                 <tree editable="bottom" >
                   <field name="plainte_id" invisible="1"/>
                   <field name="note" string="Notes" />
+                  <field name="create_uid" string="Par" />
                 </tree>
               </field>
             </page>
@@ -277,12 +310,14 @@
     <field name="name">plainte.kanban.view</field>
     <field name="model">mgp.plainte</field>
     <field name="arch" type="xml">
-      <kanban default_group_by="statut" quick_create="false" class="o_kanban_small_column o_kanban_project_tasks">
+      <kanban default_group_by="statut" quick_create="false" group_create="false" 
+        class="o_kanban_small_column o_kanban_project_tasks" nolabel="1">
         <field name="genre" /><!--Important-->
         <field name="is_last_group_receiver"/>
         <field name="statut"/>
+        <field name="response_complete"/>
         <templates>
-          <t t-name="kanban-box" class="backgrou">
+          <t t-name="kanban-box">
             <div class="oe_kanban_global_click">
               <t t-if="record.genre.raw_value=='masculin'">
                 <img class="o_kanban_image" alt="profile_female" t-att-src='_s + "/mgp/static/src/img/profile_male.png"' width="24"/>  
@@ -292,12 +327,12 @@
               </t>
               <div class="oe_kanban_details"> 
                 <div class="o_kanban_tags_section" />
-                <strong><field name="reference" /></strong>&#160;<em groups="mgp.mgp_gouvernance_operateur" class="mgp_tel_label"><field name="tel"/></em> 
+                <strong><field name="reference" /></strong><em groups="mgp.mgp_gouvernance_operateur" class="mgp_tel_label"> <field name="tel"/></em> 
                 <ul>
-                  <li><span class="mgp_label">Appel:</span>&#160;<field name="date_appel"/></li>
-                  <li><span class="mgp_label">Zone:</span>&#160;<field name="zone"/></li>
-                  <li attrs="{'invisible': [('reponse_envoye', '=', False)]}">
-                    <span class="mgp_label">Réponse:</span>&#160;<strong><field name="reponse_envoye"/></strong>
+                  <li><span class="mgp_label">Appel: </span><field name="date_appel"/></li>
+                  <li><span class="mgp_label">Zone: </span><field name="zone"/></li>
+                  <li attrs="{'invisible': [('response_complete', '=', False)]}">
+                    <span class="mgp_label">Réponse: </span><strong class="text-success">Complète</strong>
                   </li>
                 </ul>
               </div>
@@ -329,6 +364,7 @@
     <field name="name">Gestion et Suivi des plaintes</field>
     <field name="res_model">mgp.plainte</field>
     <field name="view_mode">kanban,tree,calendar,form</field>
+    <field name="domain">[('statut','in',['state', 'state_send_response_bpo', 'state_send_response_bpo']) ]</field>
     <field name="help" type="html">
       <p class="o_view_nocontent_smiling_face">
         Créer un nouveau ticket (plainte)
