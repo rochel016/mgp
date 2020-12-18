@@ -2,7 +2,7 @@ from odoo import models, fields, api, _, osv
 from datetime import datetime
 import re  # for matching
 from odoo.exceptions import ValidationError
-
+import requests # API curl (SMS tel)
 
 class Plainte(models.Model):
     _name = 'mgp.plainte'
@@ -12,11 +12,16 @@ class Plainte(models.Model):
     _rec_name = 'reference' # Sur la navigation 
 
     reference = fields.Char(string="Plainte No", readonly=True, required=True, copy=False, default= 'NOUVEAU')
-    date_appel = fields.Datetime(string="Date d'appel", required=True, default=datetime.now(), copy=False)
+    date_appel = fields.Datetime(string="Date d'appel", required=True, default=lambda self: fields.datetime.now())
     date_event = fields.Datetime(string="Date d'événement")
     
     # Contact et Localisation
     tel = fields.Char(string="Tél", required=True, copy=False)
+    email = fields.Char(string="Email", copy=False)
+    langue = fields.Selection([
+        ('MG', 'Malagasy'),
+        ('FR', 'Français'),
+    ], string="Langue du citoeyn", default="MG")
 
     def _get_default_region(self):
         """
@@ -75,7 +80,7 @@ class Plainte(models.Model):
     situation = fields.Selection([
         ('joignable', 'joignable'),
         ('injoignable', 'injoignable'),
-    ], string="Situation", readonly=True)
+    ], string="Situation.", readonly=True)
 
     resultat = fields.Selection([
         ('satisfait', 'Satisfait'),
@@ -83,43 +88,35 @@ class Plainte(models.Model):
     ], string="Niveau de satisfaction", readonly=True)
 
     statut = fields.Selection([
-        ('state', 'Créé par BPO'), # Ticket créé au BPO
+        ('state', 'Créés par BPO'), # Ticket créé au BPO
         ('state_validate_prea', 'A valider par PREA'), # En validatiton au PREA
         ('state_traitement_pmo', 'A traiter par PMO'), # En traitement ched PMO
         ('state_eval_response_prea', 'A évaluer par PREA'), # EN évaluation chez PREA
         ('state_send_response_bpo', 'A traiter par BPO'), # Donner la réponse au citoyen par BPO
-        ('state_done_bpo', 'Traité'), # Le traitment du ticket est terminé
-        ('state_invalid', 'Invalide'), # Ticket invalide par le PREA (non exploitable)
-        ('state_closed_prea', 'Fermé'), # Ticket fermé par le PREA
+        ('state_done_bpo', 'Tickets traités'), # Le traitment du ticket est terminé
+        ('state_invalid', 'Invalides'), # Ticket invalide par le PREA (non exploitable)
+        ('state_closed_prea', 'Fermés'), # Ticket fermé par le PREA
     ], string='Statut', readonly=True, copy=False, default='state', group_expand='_expand_states')
 
-    # Permet d'afficher tous les status sans (kanban) même si c'est vide
     def _expand_states(self, states, domain, order):
-        return [key for key, val in type(self).statut.selection]
-        # if self.env.user.has_group('mgp.mgp_gouvernance_operateur'):
-        #     return [('state', 'Créé par BPO'),
-        #             ('state_send_response_bpo', 'A traiter par BPO'),
-        #             ('state_done_bpo', 'Traité')]
-
-
-        # if self.env.user.has_group('mgp.mgp_gouvernance_operateur'):
-        #     return [key for key, val in [
-        #         ('state', 'Créé par BPO'),
-        #         ('state_send_response_bpo', 'A traiter par BPO'),
-        #         ('state_done_bpo', 'Traité')]]
-        # elif self.env.user.has_group('mgp.mgp_gouvernance_prea'):
-        #     return [key for key, val in [
-        #         ('state_validate_prea', 'A valider par PREA'),
-        #         ('state_traitement_pmo', 'A traiter par PMO'),
-        #         ('state_eval_response_prea', 'A évaluer par PREA'),
-        #         ('state_send_response_bpo', 'A traiter par BPO'),
-        #         ('state_done_bpo', 'Traité'),
-        #         ('state_closed_prea', 'Fermé'),
-        #         ('state_invalid', 'Invalide')]]
-        # elif self.env.user.has_group('mgp.mgp_gouvernance_pmo'):
-        #     return [key for key, val in [
-        #         ('state_traitement_pmo', 'A traiter par PMO'),
-        #         ('state_closed_prea', 'Fermé')]]
+        """Permet d'afficher tous les status sans (kanban) même si c'est vide"""
+        if self.env.user.has_group('mgp.mgp_gouvernance_operateur'):
+            return {'state': 'Créés par BPO',
+                    'state_send_response_bpo': 'A traiter par BPO',
+                    'state_done_bpo': 'Traité'}
+        elif self.env.user.has_group('mgp.mgp_gouvernance_prea'):
+            return {'state_validate_prea': 'A valider par PREA',
+                    'state_traitement_pmo': 'A traiter par PMO',
+                    'state_eval_response_prea': 'A évaluer par PREA',
+                    'state_send_response_bpo': 'A traiter par BPO',
+                    'state_done_bpo': 'Tickéts traités',
+                    'state_closed_prea': 'Fermés',
+                    'state_invalid': 'Invalide'}
+        elif self.env.user.has_group('mgp.mgp_gouvernance_pmo'):
+            return {'state_traitement_pmo': 'A traiter par PMO',
+                    'state_closed_prea': 'Fermés'}
+        else:
+            return [key for key, val in type(self).statut.selection]
 
     # Note: Seul le group 'mgp_gouvernance_prea' a le droit d'ajouter des notes
     note_ids = fields.One2many('mgp.plainte_note', 'plainte_id', string='Notes')
@@ -151,7 +148,7 @@ class Plainte(models.Model):
         """ Champs calculé qui renvoie le satut du ticket """
         self.statut_display = dict(self._fields['statut'].selection).get(self.statut)
 
-    statut_response_display = fields.Text(strin="Réponse envoyée", compute='check_response')
+    statut_response_display = fields.Text(string="Réponse envoyée", compute='check_response')
     def check_response(self):
         """ Renvoie le statut de la réponse"""
         self.statut_response_display = 'Oui' if self.response_complete else 'Non'
@@ -196,9 +193,10 @@ class Plainte(models.Model):
     def _get_localisation(self):
         """ Renvoie la localisation """
         for rec in self:
-            rec.zone = '{} / {} / {}'.format(rec.region_id.name, rec.district_id.name, rec.commune_id.name) 
-            if rec.fokontany_id:
-                rec.zone += ' / {}'.format(rec.fokontany_id.name)
+            rec.zone = '{} / {}'.format(rec.region_id.name, rec.district_id.name) 
+            # rec.zone = '{} / {} / {}'.format(rec.region_id.name, rec.district_id.name, rec.commune_id.name) 
+            # if rec.fokontany_id:
+            #     rec.zone += ' / {}'.format(rec.fokontany_id.name)
 
     # -------------------------------------------------------
     # ----------------- GROUP Contraintes -------------------
@@ -399,6 +397,15 @@ class Plainte(models.Model):
 
         # 5 - Envoyer un message au tiket créé
         self._action_send_sms(record.id, "Ticket n° {} créé avec succes.".format(record.reference))
+
+        # 6 - Envoyer un SMS Phone au citoyen
+        status_code = self.send_sms_via_orange(
+            adresse = record.tel[1:], # les 9 derniers chiffres uniquement
+            senderAddress = '320450952',
+            message = 'Votre ticket n° {} a été créé le {}'.format(record.reference, record.create_date.strftime("%d/%m/%Y, %H:%M:%S")))
+        
+        #if status_code in (200)
+
 
         return record
 
@@ -942,3 +949,43 @@ class Plainte(models.Model):
                 self.user_pmo_name = res.name
             else:
                 self.user_pmo_name = ''
+
+
+    # -------------------------------------------------------
+    # ------------- Gestion de SMS téléphonique -------------
+    # -------------------------------------------------------
+    """
+    curl -X POST -H "Authorization: Bearer XbwTrHQeljjEhTOVhXS2yVJFwH3G" -H "Content-Type: application/json" 
+    -d '{"outboundSMSMessageRequest":{"address": "tel:+261349477494", 
+    "senderAddress":"tel:+2613 20450952",
+    "outboundSMSTextMessage":{"message": "Hi Odoo Master, mety ito e"}}}' 
+    "https://api.orange.com/smsmessaging/v1/outbound/tel%3A%2B261320450952/requests"
+    """
+    def send_sms_via_orange(self, address='', senderAddress='', message=''):
+        """
+        Desc: Envoyer un sms au citoyen 
+        @address: adresse du destinataire (citoyen), ex:320000000, 330000000, 340000000
+        @senderAddress: adresse de l'envoyeur, ex: 320450952
+        @message; message à envoyer
+        Note: Le format du telephone 9 digits sans le +261
+        """
+        headers = {
+            'Authorization': 'Bearer XbwTrHQeljjEhTOVhXS2yVJFwH3G',
+            'Content-Type': 'application/json',
+        }
+
+        data = '{"outboundSMSMessageRequest": {"address": "tel:+261%s","senderAddress":"tel:+261%s","outboundSMSTextMessage":{"message": "%s"}}}' % (address, senderAddress, message)
+
+        response = requests.post('https://api.orange.com/smsmessaging/v1/outbound/tel%3A%2B261{}/requests'.format(senderAddress), headers=headers, data=data)
+
+        print('-----------------')
+        print(response.status_code)
+        return response.status_code
+
+        # Paramétrer le sms à envoyer
+        # Sauvegarder le sms envoyé
+
+
+
+       
+import requests

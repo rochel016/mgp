@@ -3,7 +3,7 @@
         <template id="assets_backend" name="mgp assets backend" inherit_id="web.assets_backend">
             <xpath expr="." position="inside">
                 <link rel="stylesheet" href="/mgp/static/src/css/mgp.css" type="text/css"/>
-                <script type="text/javascript" src="/mgp/static/src/js/mgp.js"></script>
+                <script type="text/javascript" src="/mgp/static/src/js/icon_systray.js"></script>
             </xpath>
         </template>
     </data>

@@ -1,7 +1,7 @@
 <odoo>
 
   <record id="plainte_pmo_view_search" model="ir.ui.view">
-    <field name="name">plainte.view.search</field>
+    <field name="name">plainte.pmo.view.search</field>
     <field name="model">mgp.plainte</field>
     <field name="arch" type="xml">
       <search string="Recherche des tickets">
@@ -216,7 +216,8 @@
                 <tree editable="bottom">
                   <field name="plainte_id" invisible="1"/>
                   <field name="note" string="Notes"/>
-                  <field name="create_uid" string="Par"/>
+                  <field name="create_uid" string="Par" readonly="1" />
+                  <field name="create_date" string="Le" readonly="1" />
                 </tree>
               </field>
             </page>
@@ -248,19 +249,25 @@
     <field name="name">plainte.pmo.kanban.view</field>
     <field name="model">mgp.plainte</field>
     <field name="arch" type="xml">
-      <kanban default_group_by="statut" quick_create="false" class="o_kanban_small_column o_kanban_project_tasks">
+      <kanban default_group_by="statut" quick_create="false" class="o_kanban_project_tasks">
         <field name="genre" />
         <field name="is_last_group_receiver" />
         <field name="response_complete" />
         <field name="statut" />
+
+        <progressbar
+            field="statut"
+            colors='{"state_traitement_pmo": "warning",
+                    "state_closed_prea": "muted"}'/>
+  
         <templates>
           <t t-name="kanban-box">
-            <div class="oe_kanban_global_click">
+            <div class="oe_kanban_global_click mgp_kanban_tasks_ext">
               <t t-if="record.genre.raw_value=='masculin'">
-                <img class="o_kanban_image" alt="profile_female" t-att-src='_s + "/mgp/static/src/img/profile_male.png"' width="24"/>  
+                <img class="o_kanban_image" alt="profile_male" t-att-src='_s + "/mgp/static/src/img/profile_male.png"' width="24"/>  
               </t>
               <t t-else="">
-                <img class="o_kanban_image" alt="profile_male" t-att-src='_s + "/mgp/static/src/img/profile_female.png"' width="24"/>
+                <img class="o_kanban_image" alt="profile_female" t-att-src='_s + "/mgp/static/src/img/profile_female.png"' width="24"/>
               </t>
               <div class="oe_kanban_details">
                 <div class="o_kanban_tags_section" />
@@ -302,6 +309,7 @@
     <field name="name">Traitement des plaintes</field>
     <field name="res_model">mgp.plainte</field>
     <field name="view_mode">kanban,tree,calendar,form</field>
+    <field name="search_view_id" ref="plainte_pmo_view_search"/>
     <field name="domain">[('user_pmo_id', '=', uid), ('statut','in',['state_traitement_pmo', 'state_closed_prea']) ]</field>
     <field name="help" type="html">
       <p class="o_view_nocontent_smiling_face">
@@ -337,7 +345,7 @@
     <field name="act_window_id" ref="plainte_pmo_action_window"/>
   </record>
 
-  <!-- My Specific Tree: plainte_pmo_form_view -->
+  <!-- My Specific Form: plainte_pmo_form_view -->
   <record model="ir.actions.act_window.view" id="pmo_action_window_form">
     <field eval="4" name="sequence"/>
     <field name="view_mode">form</field>

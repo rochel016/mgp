@@ -7,4 +7,4 @@ from .localisation import province, region, district, commune, fokontany
 from .citoyen import education, tranche
 
 # Modèles pour la gestion des plaintes
-from .plainte import categorie, categorie_details, composante, plainte, log, note, reponse
+from .plainte import categorie, categorie_details, composante, plainte, log, note, reponse, sms

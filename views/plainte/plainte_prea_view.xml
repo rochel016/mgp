@@ -25,7 +25,7 @@
   </record>
 
   <record id="plainte_prea_view_search" model="ir.ui.view">
-    <field name="name">plainte.view.search</field>
+    <field name="name">plainte.prea.view.search</field>
     <field name="model">mgp.plainte</field>
     <field name="arch" type="xml">
       <search string="Recherche des tickets">
@@ -93,7 +93,7 @@
 
          <!-- PREA actions -->
           <button name="action_cancel" type="object" class="oe_highlight" 
-            string="Annuler ce ticket"
+            string="Ticket non valide"
             confirm="Voulez vous vraiement annuler ce ticket?"
             statuts="state_invalid"
             attrs="{'invisible': [('statut', '!=', 'state_validate_prea')]}"/>
@@ -247,7 +247,8 @@
                 <tree editable="bottom" >
                   <field name="plainte_id" invisible="1" />
                   <field name="note" string="Notes" />
-                  <field name="create_uid" string="Par"/>
+                  <field name="create_uid" string="Par" readonly="1" />
+                  <field name="create_date" string="Le" readonly="1" />
                 </tree>
               </field>
             </page>
@@ -294,14 +295,26 @@
         <field name="is_last_group_receiver"/>
         <field name="response_complete" />
         <field name="statut" />
+
+        <!-- Optional progress bar -->
+        <progressbar
+            field="statut"
+            colors='{"state_validate_prea": "warning",
+                    "state_traitement_pmo": "info",
+                    "state_eval_response_prea": "primary",
+                    "state_send_response_bpo": "dark",
+                    "state_done_bpo": "success",
+                    "state_closed_prea": "muted",
+                    "state_invalid": "danger"}'/>
+
         <templates>
           <t t-name="kanban-box">
-            <div class="oe_kanban_global_click">
+            <div class="oe_kanban_global_click mgp_kanban_tasks_ext">
               <t t-if="record.genre.raw_value=='masculin'">
-                <img class="o_kanban_image" alt="profile_female" t-att-src='_s + "/mgp/static/src/img/profile_male.png"' width="24"/>  
+                <img class="o_kanban_image" alt="profile_male" t-att-src='_s + "/mgp/static/src/img/profile_male.png"' width="24"/>  
               </t>
               <t t-else="">
-                <img class="o_kanban_image" alt="profile_male" t-att-src='_s + "/mgp/static/src/img/profile_female.png"' width="24"/>
+                <img class="o_kanban_image" alt="profile_female" t-att-src='_s + "/mgp/static/src/img/profile_female.png"' width="24"/>
               </t>
               <div class="oe_kanban_details"> 
                 <div class="o_kanban_tags_section" />
@@ -352,6 +365,7 @@
     <field name="name">Gestion et Suivi des plaintes</field>
     <field name="res_model">mgp.plainte</field>
     <field name="view_mode">kanban,tree,calendar,form</field>
+    <field name="search_view_id" ref="plainte_prea_view_search"/>
      <field name="domain">[('statut','not in',['state']) ]</field>
     <field name="help" type="html">
       <p class="o_view_nocontent_smiling_face">
@@ -387,7 +401,7 @@
     <field name="act_window_id" ref="plainte_prea_action_window"/>
   </record>
 
-  <!-- My Specific Tree: plainte_prea_form_view -->
+  <!-- My Specific Form: plainte_prea_form_view -->
   <record model="ir.actions.act_window.view" id="prea_action_window_form">
     <field eval="4" name="sequence"/>
     <field name="view_mode">form</field>

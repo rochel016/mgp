@@ -1,3 +1,4 @@
+from requests.sessions import default_headers
 from odoo import models, fields, api
 from datetime import datetime
 
@@ -21,4 +22,8 @@ class Log(models.Model):
         ('state_done_bpo', 'Traité'), # Le traitment du ticket est terminé
         ('state_invalid', 'Invalide'), # Ticket invalide par le PREA (non exploitable)
         ('state_closed_prea', 'Fermé'), # Ticket fermé par le PREA
-    ], string='Status', readonly=True, copy=False, default='state')  
+    ], string='Status', readonly=True, copy=False, default='state')
+    
+    # Message envoyé au citoyen (160 caractère)
+    sms = fields.Char(string="Message envoyé", size=160)
+    sms_sent = fields.Boolean(string="Si message envoyé", default=False)

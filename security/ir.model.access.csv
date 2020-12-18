@@ -2,6 +2,7 @@ id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
 plainte_categorie_user,Mgp user,model_mgp_plainte_categorie,,1,1,1,1
 plainte_categorie_details_user,Mgp user,model_mgp_plainte_categorie_details,,1,1,1,1
 plainte_composante_user,Mgp user,model_mgp_plainte_composante,,1,1,1,1
+plainte_sms_user,Mgp user,model_mgp_plainte_sms,,1,1,1,1
 citoyen_education_user,Mgp user,model_mgp_citoyen_education,,1,1,1,1
 citoyen_tranche_user,Mgp user,model_mgp_citoyen_tranche,,1,1,1,1
 loc_province_user,Mgp user,model_mgp_loc_province,,1,1,1,1

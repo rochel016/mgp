@@ -24,6 +24,7 @@
     <menuitem id="categorie_menu" parent="param_plainte_sub_menu" action="categorie_action_window"/>
     <menuitem id="categorie_details_menu" parent="param_plainte_sub_menu" action="categorie_details_action_window"/>
     <menuitem id="composante_menu" parent="param_plainte_sub_menu" action="composante_action_window"/>
+    <menuitem id="sms_menu" parent="param_plainte_sub_menu" action="sms_action_window"/>
 
     <!-- MENU LOCALISATION -->
     <menuitem id="province_sub_menu" parent="root_menu" name="Paramétrage localisation" sequence="6"

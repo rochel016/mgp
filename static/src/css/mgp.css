@@ -10,3 +10,12 @@
     font-size: 11px;
 
 }
+
+.mgp_kanban_tasks_ext {
+    border-radius: 5px;
+}
+
+.mgp_systray_notif {
+    padding: 6px 10px;
+    cursor: pointer;
+}

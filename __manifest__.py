@@ -32,6 +32,7 @@
         "views/plainte/categorie_view.xml",
         "views/plainte/categorie_details_view.xml",
         "views/plainte/composante_view.xml",
+        "views/plainte/sms_view.xml",
 
          # Paramétrage des citoyens
         "views/citoyen/education_view.xml",

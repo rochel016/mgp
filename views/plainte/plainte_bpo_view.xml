@@ -12,8 +12,8 @@
     <field name="implementation">standard</field>
   </record>
 
-  <record id="plainte_bpo_view_search" model="ir.ui.view">
-    <field name="name">plainte.view.search</field>
+  <record id="plainte_bpo_search_view" model="ir.ui.view">
+    <field name="name">plainte.bpo.view.search</field>
     <field name="model">mgp.plainte</field>
     <field name="arch" type="xml">
       <search string="Recherche des tickets">
@@ -76,6 +76,10 @@
         <header>
           <!--Group receiver of current user ('is_last_group_receiver', '=', False) -->
           <field name="is_last_group_receiver" invisible="1" />
+         
+          <button name="send_sms_via_orange" type="object" class="oe_highlight"
+            string="Envoyer SMS" 
+            statuts="state"/>
 
           <button name="action_send_to_prea" type="object" class="oe_highlight"
             string="Envoyer au PREA" 
@@ -269,7 +273,7 @@
 
           <group>  
             <field name="ennonce" string="Plainte/Doléance" placeholder="Exposez ici l'ennoncé de la plainte"
-              attrs="{'readonly':['|', ('check_write', '=', True), ('statut', '!=', 'state')]}"/>
+              attrs="{'readonly':['|', ('check_write', '=', True), ('statut', '!=', 'state')]}" height="250"/>
           </group>
 
           <notebook>
@@ -279,7 +283,8 @@
                 <tree editable="bottom" >
                   <field name="plainte_id" invisible="1"/>
                   <field name="note" string="Notes" />
-                  <field name="create_uid" string="Par" />
+                  <field name="create_uid" string="Par" readonly="1" />
+                  <field name="create_date" string="Le" readonly="1" />
                 </tree>
               </field>
             </page>
@@ -296,11 +301,11 @@
             </page>
           </notebook>
         </sheet>
-        <div class="oe_chatter">
+        <!-- <div class="oe_chatter">
           <field name="message_follower_ids" widget="mail_followers"/>
           <field name="activity_ids" widget="mail_activity"/>
           <field name="message_ids" widget="mail_thread"/>
-        </div>
+        </div> -->
       </form>
     </field>
   </record>
@@ -310,24 +315,31 @@
     <field name="name">plainte.kanban.view</field>
     <field name="model">mgp.plainte</field>
     <field name="arch" type="xml">
-      <kanban default_group_by="statut" quick_create="false" group_create="false" 
-        class="o_kanban_small_column o_kanban_project_tasks" nolabel="1">
+      <kanban default_group_by="statut" quick_create="false" group_create="false" class="o_kanban_project_tasks" nolabel="1">
         <field name="genre" /><!--Important-->
         <field name="is_last_group_receiver"/>
         <field name="statut"/>
         <field name="response_complete"/>
+
+        <!-- Optional progress bar -->
+        <progressbar
+            field="statut"
+            colors='{"state": "warning",
+                    "state_send_response_bpo": "primary",
+                    "state_done_bpo": "success"}'/>
+
         <templates>
           <t t-name="kanban-box">
-            <div class="oe_kanban_global_click">
+            <div class="oe_kanban_global_click mgp_kanban_tasks_ext">
               <t t-if="record.genre.raw_value=='masculin'">
-                <img class="o_kanban_image" alt="profile_female" t-att-src='_s + "/mgp/static/src/img/profile_male.png"' width="24"/>  
+                <img class="o_kanban_image" alt="profile_male" t-att-src='_s + "/mgp/static/src/img/profile_male.png"' width="24"/>  
               </t>
               <t t-else="">
-                <img class="o_kanban_image" alt="profile_male" t-att-src='_s + "/mgp/static/src/img/profile_female.png"' width="24"/>
+                <img class="o_kanban_image" alt="profile_female" t-att-src='_s + "/mgp/static/src/img/profile_female.png"' width="24"/>
               </t>
               <div class="oe_kanban_details"> 
-                <div class="o_kanban_tags_section" />
-                <strong><field name="reference" /></strong><em groups="mgp.mgp_gouvernance_operateur" class="mgp_tel_label"> <field name="tel"/></em> 
+                <div class="o_kanban_tags_section"/>
+                <strong><field name="reference"/></strong><em groups="mgp.mgp_gouvernance_operateur" class="mgp_tel_label"> <field name="tel"/></em> 
                 <ul>
                   <li><span class="mgp_label">Appel: </span><field name="date_appel"/></li>
                   <li><span class="mgp_label">Zone: </span><field name="zone"/></li>
@@ -354,7 +366,7 @@
         <field name="categorie_id" options="{'no_open': True, 'no_create': True}"/>
         <field name="statut" class="text-warning"/>
         <field name="jours_traitement"/>
-        <field name="tel" />
+        <field name="tel"/>
       </calendar>
     </field>
   </record>
@@ -364,7 +376,8 @@
     <field name="name">Gestion et Suivi des plaintes</field>
     <field name="res_model">mgp.plainte</field>
     <field name="view_mode">kanban,tree,calendar,form</field>
-    <field name="domain">[('statut','in',['state', 'state_send_response_bpo', 'state_send_response_bpo']) ]</field>
+    <field name="search_view_id" ref="plainte_bpo_search_view"/>
+    <field name="domain">[('statut','in',['state', 'state_send_response_bpo', 'state_done_bpo']) ]</field>
     <field name="help" type="html">
       <p class="o_view_nocontent_smiling_face">
         Créer un nouveau ticket (plainte)
@@ -399,13 +412,12 @@
     <field name="act_window_id" ref="plainte_bpo_action_window"/>
   </record>
 
-  <!-- My Specific Tree: plainte_bpo_form_view -->
+  <!-- My Specific Form: plainte_bpo_form_view -->
   <record model="ir.actions.act_window.view" id="bpo_action_window_form">
     <field eval="4" name="sequence"/>
     <field name="view_mode">form</field>
     <field name="view_id" ref="plainte_bpo_form_view"/>
     <field name="act_window_id" ref="plainte_bpo_action_window"/>
   </record>
-
 
 </odoo>

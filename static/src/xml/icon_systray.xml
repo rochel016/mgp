@@ -2,11 +2,11 @@
 <templates>
     <t t-name="systray_ticket.icon">
         <li class="new_icon">
-            <label class="my_icon" style="margin-bottom:0px;" title="My Icon">
+            <label class="my_icon" style="margin-bottom:0px; cursor:pointer;" title="Tickets à traiter">
                 <div class="icon_div">
                     <div class="toggle-icon">
-                        <i class="fa fa-bell" style="color:yellow" id="fa-bell"/>
-                        <sup class="toto">1</sup>  
+                        <i class="fa fa-bell" style="color:yellow;" id="fa-bell"/>
+                        <sup id="tickets_count_id"></sup>
                     </div>
                 </div>
             </label>
