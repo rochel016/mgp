@@ -11,7 +11,7 @@
     'website': "https://digital.gov.mg/",
     # 'category': 'Gouvernance',
     'version': '0.1',
-    'depends': ['base', 'mail'],
+    'depends': ['base', 'mail', 'board'],
     'qweb': [
         'static/src/xml/icon_systray.xml'],
     'data': [
@@ -47,6 +47,12 @@
 
         # Gestion des menus
         'static/src/xml/menu.xml',
+
+        #Tableau de bord
+        #"views/dashboard.xml"
+
+        # template EMAIL
+        "static/src/xml/mail_template.xml"
     ],
     
     'application': True,

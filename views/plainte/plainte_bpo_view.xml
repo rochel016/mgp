@@ -1,16 +1,18 @@
 <odoo>
 
   <!-- explicit sequence reference -->
-  <record id="seq_name_occ" model="ir.sequence">
-    <field name="name">Reference sequence</field>
-    <field name="code">mgp.plainte</field>
-    <field name="active">TRUE</field>
-    <field name="prefix">%(year)s/%(month)s/</field>
-    <field name="padding">4</field>
-    <field name="number_next">1</field>
-    <field name="number_increment">1</field>
-    <field name="implementation">standard</field>
-  </record>
+  <data noupdate="1">
+    <record id="seq_name_occ" model="ir.sequence">
+      <field name="name">Reference sequence</field>
+      <field name="code">mgp.plainte</field>
+      <field name="active">TRUE</field>
+      <field name="prefix">%(year)s/%(month)s/</field>
+      <field name="padding">4</field>
+      <field name="number_next">1</field>
+      <field name="number_increment">1</field>
+      <field name="implementation">standard</field>
+    </record>
+  </data>
 
   <record id="plainte_bpo_search_view" model="ir.ui.view">
     <field name="name">plainte.bpo.view.search</field>
@@ -76,10 +78,6 @@
         <header>
           <!--Group receiver of current user ('is_last_group_receiver', '=', False) -->
           <field name="is_last_group_receiver" invisible="1" />
-         
-          <button name="send_sms_via_orange" type="object" class="oe_highlight"
-            string="Envoyer SMS" 
-            statuts="state"/>
 
           <button name="action_send_to_prea" type="object" class="oe_highlight"
             string="Envoyer au PREA" 
@@ -299,6 +297,27 @@
                 </group>
               </group>
             </page>
+
+            <page name="Responses" string="Réponse (PMO)" attrs="{'invisible': [('response_complete', '=', False)]}">
+              <field name="reponse_ids" context="{'default_plainte_id':active_id}" widget="one2many_list">
+                <tree editable="bottom">
+                  <field name="plainte_id" invisible="1" />
+                  <field name="reponse" />
+                </tree>
+              </field>
+            </page>
+            
+            <page name="Audit" string="Audit">
+              <field name="log_ids" widget="many2many_list">
+                <tree editable="bottom">
+                  <field name="create_date" string="Date"/>
+                  <field name="statut" string="Statut"/>
+                  <field name="action"/>
+                  <field name="group_sender_id" string="Par"/>
+                  <field name="create_uid" string="Resposanble"/>
+                </tree>
+              </field>
+            </page>
           </notebook>
         </sheet>
         <!-- <div class="oe_chatter">
@@ -320,6 +339,7 @@
         <field name="is_last_group_receiver"/>
         <field name="statut"/>
         <field name="response_complete"/>
+        <field name="is_reprocessed" />
 
         <!-- Optional progress bar -->
         <progressbar
@@ -345,6 +365,9 @@
                   <li><span class="mgp_label">Zone: </span><field name="zone"/></li>
                   <li attrs="{'invisible': [('response_complete', '=', False)]}">
                     <span class="mgp_label">Réponse: </span><strong class="text-success">Complète</strong>
+                  </li>
+                  <li attrs="{'invisible': [('is_reprocessed', '=', False)]}">
+                    <strong class="mgp_label text-warning">En retraitment</strong>
                   </li>
                 </ul>
               </div>

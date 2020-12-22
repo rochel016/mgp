@@ -241,6 +241,25 @@ class Plainte(models.Model):
         else:
             self.is_group_pmo = False
 
+
+    is_reprocessed = fields.Boolean(compute='_is_reprocessed', default=False)
+    def _is_reprocessed(self):
+        """Si le ticket est retraité => citoyen non satisfait"""
+        for rec in self:
+            count = 0
+            for log in rec.log_ids:
+                if log.statut == 'state_eval_response_prea':
+                    count += 1
+            rec.is_reprocessed = True if count > 1 else False
+    
+    reprocessed_display = fields.Text(string="Retraitement", compute='get_reprocessed')
+    def get_reprocessed(self):
+        for rec in self:
+            if rec.is_reprocessed:
+                rec.reprocessed_display = 'Ticket en'
+            else:
+                rec.reprocessed_display = ''
+
     # -------------------------------------------------------
     # ------------------- Contraintes champs ----------------
     # -------------------------------------------------------
@@ -249,7 +268,7 @@ class Plainte(models.Model):
         """ Le téléphone ne contient que des chiffres, séparé par point virgule """
         for rec in self:
             if len(rec.tel) != 10 or not re.match(r"^[0-9;]+$", rec.tel):
-                raise ValidationError(_("Le numéro doit être en chiffre et de 10 digits"))
+                raise ValidationError(_("Le numéro doit être de 10 chiffres"))
                 # ??? return {
                 #     'type': 'ir.actions.client',
                 #     'tag': 'display_notification',
@@ -399,10 +418,10 @@ class Plainte(models.Model):
         self._action_send_sms(record.id, "Ticket n° {} créé avec succes.".format(record.reference))
 
         # 6 - Envoyer un SMS Phone au citoyen
-        status_code = self.send_sms_via_orange(
-            adresse = record.tel[1:], # les 9 derniers chiffres uniquement
-            senderAddress = '320450952',
-            message = 'Votre ticket n° {} a été créé le {}'.format(record.reference, record.create_date.strftime("%d/%m/%Y, %H:%M:%S")))
+        # status_code = self.send_sms_via_orange(
+        #     adresse = record.tel[1:], # les 9 derniers chiffres uniquement
+        #     senderAddress = '320450952',
+        #     message = 'Votre ticket n° {} a été créé le {}'.format(record.reference, record.create_date.strftime("%d/%m/%Y, %H:%M:%S")))
         
         #if status_code in (200)
 
@@ -961,7 +980,7 @@ class Plainte(models.Model):
     "outboundSMSTextMessage":{"message": "Hi Odoo Master, mety ito e"}}}' 
     "https://api.orange.com/smsmessaging/v1/outbound/tel%3A%2B261320450952/requests"
     """
-    def send_sms_via_orange(self, address='', senderAddress='', message=''):
+    def send_sms_via_orange(self, address="", senderAddress="", message=""):
         """
         Desc: Envoyer un sms au citoyen 
         @address: adresse du destinataire (citoyen), ex:320000000, 330000000, 340000000
@@ -986,6 +1005,40 @@ class Plainte(models.Model):
         # Sauvegarder le sms envoyé
 
 
+    # -------------------------------------------------------
+    # --------------- Gestion de MAIL personna --------------
+    # -------------------------------------------------------
+    def send_email(self):
+        temp = self.env.ref('mgp.mgp_email_template')
+        if temp:
+            # example: user - instance of res.users
+            temp.sudo().with_context().send_mail(self.env.uid, force_send=True)
+    
 
-       
-import requests
+    # -------------------------------------------------------
+    # --------------- Controle CRUD with status -------------
+    # -------------------------------------------------------
+    x_css = fields.Html(
+        string='CSS',
+        sanitize=False,
+        compute='_compute_css',
+        store=False,
+    )
+    #@api.depends('statut')
+    def _compute_css(self):
+        for res in self:
+            res.x_css = '<style>.o_form_button_edit {display: none !important;}</style>'
+            # if res.statut in ('state_validate_prea', 'state_eval_response_prea', 'state_invalid'):
+            #     print(res.statut)
+            #     res.x_css = '<style>.o_form_button_edit {display: none !important;}</style>'
+            # else:
+            #     res.x_css = False
+
+    # ('state', 'Créés par BPO'), # Ticket créé au BPO
+    # ('state_validate_prea', 'A valider par PREA'), # En validatiton au PREA
+    # ('state_traitement_pmo', 'A traiter par PMO'), # En traitement ched PMO
+    # ('state_eval_response_prea', 'A évaluer par PREA'), # EN évaluation chez PREA
+    # ('state_send_response_bpo', 'A traiter par BPO'), # Donner la réponse au citoyen par BPO
+    # ('state_done_bpo', 'Tickets traités'), # Le traitment du ticket est terminé
+    # ('state_invalid', 'Invalides'), # Ticket invalide par le PREA (non exploitable)
+    # ('state_closed_prea', 'Fermés'), #

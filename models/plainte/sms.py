@@ -21,7 +21,7 @@ class Sms(models.Model):
         ('state_closed_prea', 'Fermés'), # Ticket fermé par le PREA
     ], string='Statut', copy=False)
 
-    message = fields.Char(string='Message (160 caractères)', required=True)
+    message = fields.Char(string='Message', required=True)
 
     # -------------------------------------------------------
     # -------------- Contrainte d'integrité -----------------

@@ -10,7 +10,7 @@ loc_region_user,Mgp user,model_mgp_loc_region,,1,1,1,1
 loc_district_user,Mgp user,model_mgp_loc_district,,1,1,1,1
 loc_commune_user,Mgp user,model_mgp_loc_commune,,1,1,1,1
 loc_fokontany_user,Mgp user,model_mgp_loc_fokontany,,1,1,1,1
-plainte_user_operateur,Mgp user,model_mgp_plainte,mgp.mgp_gouvernance_operateur,1,1,1,1
+plainte_user_operateur,Mgp user,model_mgp_plainte,mgp.mgp_gouvernance_operateur,1,1,1,
 plainte_user_prea,Mgp user,model_mgp_plainte,mgp.mgp_gouvernance_prea,1,1,,
 plainte_user_pmo,Mgp user,model_mgp_plainte,mgp.mgp_gouvernance_pmo,1,1,,
 plainte_log_user_operateur,Mgp user,model_mgp_plainte_log,mgp.mgp_gouvernance_operateur,1,1,1,1

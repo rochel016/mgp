@@ -221,6 +221,7 @@
                 </tree>
               </field>
             </page>
+
             <page name="Responses" string="Réponse" autofocus="autofocus">
               <field name="reponse_ids" context="{'default_plainte_id':active_id}" widget="one2many_list"
                 attrs="{'readonly':['|', ('statut', '!=', 'state_traitement_pmo'), ('statut', 'in', ['|', 'state','state_invalid','state_closed_prea'])]}">
@@ -232,6 +233,18 @@
               <group>
                 <field name="response_complete" attrs="{'readonly': [('statut', '!=', 'state_traitement_pmo')]}"/>
               </group>
+            </page>
+
+            <page name="Audit" string="Audit">
+              <field name="log_ids" widget="many2many_list">
+                <tree editable="bottom">
+                  <field name="create_date" string="Date"/>
+                  <field name="statut" string="Statut"/>
+                  <field name="action"/>
+                  <field name="group_sender_id" string="Par"/>
+                  <field name="create_uid" string="Resposanble"/>
+                </tree>
+              </field>
             </page>
           </notebook>
         </sheet>
@@ -254,7 +267,8 @@
         <field name="is_last_group_receiver" />
         <field name="response_complete" />
         <field name="statut" />
-
+        <field name="is_reprocessed" />
+        
         <progressbar
             field="statut"
             colors='{"state_traitement_pmo": "warning",
@@ -278,6 +292,9 @@
                   <li><span class="mgp_label">Catégorie: </span><field name="categorie_id"/></li>
                   <li attrs="{'invisible': [('response_complete', '=', False)]}">
                     <span class="mgp_label">Réponse: </span><strong class="text-success">Complète</strong>
+                  </li>
+                  <li attrs="{'invisible': [('is_reprocessed', '=', False)]}">
+                    <strong class="mgp_label text-warning">En retraitment</strong>
                   </li>
                 </ul>
               </div>

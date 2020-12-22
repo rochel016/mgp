@@ -86,10 +86,15 @@
         <field name="statut" invisible="1"/> <!--IMPORTANT -->
         <field name="resultat" invisible="1"/> <!--IMPORTANT -->
         <field name="situation" invisible="1"/> <!--IMPORTANT -->
+        <field name="is_reprocessed" invisible="1"/>
 
         <header>
           <!--Group receiver of current user ('is_last_group_receiver', '=', False) -->
           <field name="is_last_group_receiver" invisible="1" />
+
+          <button name="send_email" type="object" class="oe_highlight text-danger"
+            string="Envoyer Email" 
+            statuts="state"/>
 
          <!-- PREA actions -->
           <button name="action_cancel" type="object" class="oe_highlight" 
@@ -143,6 +148,12 @@
             <button name="get_situation" type="object" class="oe_stat_button" icon="fa-phone text-warning" style="width: 100px"
               attrs="{'invisible': [('situation', '!=', 'injoignable')]}">
               <field name="situation_display" widget="statinfo"/>
+            </button>
+
+            <!--Retraitment du ticket-->
+            <button name="get_reprocessed" type="object" class="oe_stat_button" icon="fa-spinner text-info" style="width: 200px"
+              attrs="{'invisible': [('is_reprocessed', '=', False)]}">
+              <field name="reprocessed_display" widget="statinfo"/>
             </button>
 
             <!-- Nombre de jours de traitement -->
@@ -295,6 +306,7 @@
         <field name="is_last_group_receiver"/>
         <field name="response_complete" />
         <field name="statut" />
+        <field name="is_reprocessed" />
 
         <!-- Optional progress bar -->
         <progressbar
@@ -335,6 +347,9 @@
                   <li attrs="{'invisible': [('response_complete', '=', False)]}">
                     <span class="mgp_label">Réponse: </span><strong class="text-success">Complète</strong>
                   </li>
+                  <li attrs="{'invisible': [('is_reprocessed', '=', False)]}">
+                    <strong class="mgp_label text-warning">En retraitment</strong>
+                  </li>
                 </ul>
               </div>
             </div>
@@ -360,11 +375,35 @@
     </field>
   </record>
 
+  <!-- View Graph -->
+  <record id="plainte_prea_graph_view" model="ir.ui.view">
+    <field name="name">plainte.graph.view</field>
+    <field name="model">mgp.plainte</field>
+    <field name="arch" type="xml">
+      <graph string="Par statut" type="bar"> <!--line, pie stacked="True"-->
+        <field name="categorie_id"/>
+        <field name="statut" type="row"/>    <!--row-->
+      </graph>
+    </field>
+  </record>
+
+  <!-- View Pivot -->
+  <record id="plainte_prea_pivot_view" model="ir.ui.view">
+    <field name="name">plainte.pivot.view</field>
+    <field name="model">mgp.plainte</field>
+    <field name="arch" type="xml">
+      <pivot string="Par statut">
+        <field name="statut" type="col"/>
+        <field name="categorie_id" type="row"/>
+      </pivot>
+    </field>
+  </record>
+
   <!-- server action to the one above -->
   <record id="plainte_prea_action_window" model="ir.actions.act_window">
     <field name="name">Gestion et Suivi des plaintes</field>
     <field name="res_model">mgp.plainte</field>
-    <field name="view_mode">kanban,tree,calendar,form</field>
+    <field name="view_mode">kanban,tree,form,calendar,graph,pivot</field>
     <field name="search_view_id" ref="plainte_prea_view_search"/>
      <field name="domain">[('statut','not in',['state']) ]</field>
     <field name="help" type="html">
@@ -406,6 +445,22 @@
     <field eval="4" name="sequence"/>
     <field name="view_mode">form</field>
     <field name="view_id" ref="plainte_prea_form_view"/>
+    <field name="act_window_id" ref="plainte_prea_action_window"/>
+  </record>
+
+  <!-- My Specific Form: plainte_prea_graph_view -->
+  <record model="ir.actions.act_window.view" id="prea_action_window_graph">
+    <field eval="5" name="sequence"/>
+    <field name="view_mode">graph</field>
+    <field name="view_id" ref="plainte_prea_graph_view"/>
+    <field name="act_window_id" ref="plainte_prea_action_window"/>
+  </record>
+
+  <!-- My Specific Form: plainte_prea_graph_view -->
+  <record model="ir.actions.act_window.view" id="prea_action_window_pivot">
+    <field eval="6" name="sequence"/>
+    <field name="view_mode">pivot</field>
+    <field name="view_id" ref="plainte_prea_pivot_view"/>
     <field name="act_window_id" ref="plainte_prea_action_window"/>
   </record>
 

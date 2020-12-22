@@ -29,7 +29,8 @@ odoo.define('systray_ticket.systray_ticket', function(require) {
             self = this;
             setTimeout(function(){
                 // Show tickets  notification for current user
-                document.getElementById("tickets_count_id").innerHTML = tickets_count
+                if (document.getElementById('tickets_count_id')) 
+                    document.getElementById("tickets_count_id").innerHTML = tickets_count;
             }, 50);
         },
 
@@ -53,8 +54,8 @@ odoo.define('systray_ticket.systray_ticket', function(require) {
                                 for (var index = 0; index < tickets_list.length; ++index) {
                                     elt += '<p class="mgp_systray_notif">' + 'N°' + tickets_list[index][0] + ', ' + tickets_list[index][1] + '</p>';
                                 }
-
-                                document.getElementById("notif_ticket").innerHTML = elt;
+                                if (document.getElementById('tickets_count_id'))
+                                    document.getElementById("notif_ticket").innerHTML = elt;
                             }, 50);
                         } else {
                             console.log("No ticket ou Erreur loading ticket");
