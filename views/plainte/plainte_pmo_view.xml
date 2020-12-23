@@ -242,7 +242,7 @@
                   <field name="statut" string="Statut"/>
                   <field name="action"/>
                   <field name="group_sender_id" string="Par"/>
-                  <field name="create_uid" string="Resposanble"/>
+                  <field name="create_uid" string="Responsable"/>
                 </tree>
               </field>
             </page>
@@ -294,7 +294,7 @@
                     <span class="mgp_label">Réponse: </span><strong class="text-success">Complète</strong>
                   </li>
                   <li attrs="{'invisible': [('is_reprocessed', '=', False)]}">
-                    <strong class="mgp_label text-warning">En retraitment</strong>
+                    <strong class="mgp_label text-warning">En retraitement</strong>
                   </li>
                 </ul>
               </div>

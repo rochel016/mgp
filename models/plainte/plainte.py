@@ -687,7 +687,18 @@ class Plainte(models.Model):
         - Desc: Envoyer le ticket au PMO
         - From PREA to PMO
         """
-        if self.env.user.has_group('mgp.mgp_gouvernance_prea'):
+        if self.user_pmo_id.id == False:
+            return {
+                'type': 'ir.actions.client',
+                'tag': 'display_notification',
+                'params': {
+                    'title': _("Envoi ticket au PMO"),
+                    'message': _("Veuillez seléctionner un utilisateur PMO."),
+                    'type':'danger',
+                    'sticky': False,
+                },
+            }
+        elif self.env.user.has_group('mgp.mgp_gouvernance_prea'):
             for rec in self:
                 # 1 - Update ticket state
                 rec.statut = 'state_traitement_pmo'

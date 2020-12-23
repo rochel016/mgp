@@ -92,9 +92,9 @@
           <!--Group receiver of current user ('is_last_group_receiver', '=', False) -->
           <field name="is_last_group_receiver" invisible="1" />
 
-          <button name="send_email" type="object" class="oe_highlight text-danger"
+          <!-- <button name="send_email" type="object" class="oe_highlight text-danger"
             string="Envoyer Email" 
-            statuts="state"/>
+            statuts="state"/> -->
 
          <!-- PREA actions -->
           <button name="action_cancel" type="object" class="oe_highlight" 
@@ -236,7 +236,7 @@
             <group>
               <field name="region_id" readonly="1" options="{'no_create_edit': True, 'no_create': True, 'no_open': True}"/>
               <field name="district_id" readonly="1" options="{'no_create_edit': True, 'no_create': True, 'no_open': True}"/>
-              <field name="commune_id" readonly="1" options="{'no_create_edit': True, 'no_create': True, 'no_open': True}"/>
+              <field name="commune_id" readonly="1" options="{'no_create_edEnvoi du ticket au PMO (user_pmo_1)it': True, 'no_create': True, 'no_open': True}"/>
               <field name="fokontany_id" readonly="1" options="{'no_create_edit': True, 'no_create': True, 'no_open': True}"/>
               <field name="composante_id" readonly="1" options="{'no_create_edit': True, 'no_create': True, 'no_open': True}"/>
             </group>
@@ -280,7 +280,7 @@
                   <field name="statut" string="Statut"/>
                   <field name="action"/>
                   <field name="group_sender_id" string="Par"/>
-                  <field name="create_uid" string="Resposanble"/>
+                  <field name="create_uid" string="Responsable"/>
                 </tree>
               </field>
             </page>
@@ -348,7 +348,7 @@
                     <span class="mgp_label">Réponse: </span><strong class="text-success">Complète</strong>
                   </li>
                   <li attrs="{'invisible': [('is_reprocessed', '=', False)]}">
-                    <strong class="mgp_label text-warning">En retraitment</strong>
+                    <strong class="mgp_label text-warning">En retraitement</strong>
                   </li>
                 </ul>
               </div>
