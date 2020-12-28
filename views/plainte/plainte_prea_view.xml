@@ -93,7 +93,7 @@
           <field name="is_last_group_receiver" invisible="1" />
 
           <button name="send_email" type="object" class="oe_highlight text-warning"
-            string="Envoyer Email TEST" 
+            string="Envoyer Email TESTaaaa" 
             statuts="state"/>
 
          <!-- PREA actions -->
