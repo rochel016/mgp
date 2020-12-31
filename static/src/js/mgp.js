@@ -7,7 +7,7 @@ odoo.define('mgp.plainte', function (require) {
         init: function(record) {
             this._super.apply(this, arguments);
             console.log('INIT');
-            console.log(record.fields.reference);
+            //console.log(record.fields.reference);
 
             self = this;
             if (this.controllerParams.modelName === 'mgp.plainte') {

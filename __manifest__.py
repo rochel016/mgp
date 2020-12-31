@@ -10,7 +10,7 @@
     'license': "AGPL-3", 
     'website': "https://digital.gov.mg/",
     # 'category': 'Gouvernance',
-    'version': '0.1',
+    'version': '1.0.0',
     'depends': ['base', 'mail', 'board'],
     'qweb': [
         'static/src/xml/icon_systray.xml'],
@@ -45,14 +45,15 @@
         "views/localisation/commune_view.xml",
         "views/localisation/fokontany_view.xml",
 
-        # Gestion des menus
-        'static/src/xml/menu.xml',
+        # template EMAIL
+        "static/src/xml/mail_template.xml",
 
         #Tableau de bord
-        #"views/dashboard.xml"
+        "views/dashboard/dashboard_prea.xml",
+        "views/dashboard/dashboard_pmo.xml",
 
-        # template EMAIL
-        "static/src/xml/mail_template.xml"
+        # Gestion des menus
+        'static/src/xml/menu.xml',
     ],
     
     'application': True,

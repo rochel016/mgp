@@ -92,9 +92,9 @@
           <!--Group receiver of current user ('is_last_group_receiver', '=', False) -->
           <field name="is_last_group_receiver" invisible="1" />
 
-          <button name="send_email" type="object" class="oe_highlight text-warning"
-            string="Envoyer Email De TEST" 
-            statuts="state"/>
+          <!-- <button name="send_email" type="object" class="oe_highlight text-warning"
+            string="Envoyer Email TEST" 
+            statuts="state"/> -->
 
          <!-- PREA actions -->
           <button name="action_cancel" type="object" class="oe_highlight" 
@@ -405,7 +405,7 @@
     <field name="res_model">mgp.plainte</field>
     <field name="view_mode">kanban,tree,form,calendar,graph,pivot</field>
     <field name="search_view_id" ref="plainte_prea_view_search"/>
-     <field name="domain">[('statut','not in',['state']) ]</field>
+    <field name="domain">[('statut','not in',['state']) ]</field>
     <field name="help" type="html">
       <p class="o_view_nocontent_smiling_face">
         Aucun ticket (plainte)
@@ -456,7 +456,7 @@
     <field name="act_window_id" ref="plainte_prea_action_window"/>
   </record>
 
-  <!-- My Specific Form: plainte_prea_graph_view -->
+  <!-- My Specific Form: plainte_prea_pivot_view -->
   <record model="ir.actions.act_window.view" id="prea_action_window_pivot">
     <field eval="6" name="sequence"/>
     <field name="view_mode">pivot</field>

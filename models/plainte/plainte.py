@@ -21,7 +21,7 @@ class Plainte(models.Model):
     langue = fields.Selection([
         ('MG', 'Malagasy'),
         ('FR', 'Français'),
-    ], string="Langue du citoeyn", default="MG")
+    ], string="Langue du citoyen", default="MG")
 
     def _get_default_region(self):
         """
@@ -197,6 +197,8 @@ class Plainte(models.Model):
             # rec.zone = '{} / {} / {}'.format(rec.region_id.name, rec.district_id.name, rec.commune_id.name) 
             # if rec.fokontany_id:
             #     rec.zone += ' / {}'.format(rec.fokontany_id.name)
+    
+    user_id = fields.Integer(default=8, store=False)
 
     # -------------------------------------------------------
     # ----------------- GROUP Contraintes -------------------
