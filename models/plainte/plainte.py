@@ -406,7 +406,7 @@ class Plainte(models.Model):
             action = "Création d'un nouveau ticket",
             statut = "state",
             notif_sender = "Ticket créé",
-            notif_receiver = "Ticket n° {} en attente d'envoi au PREA".foramt(record.reference))
+            notif_receiver = "Ticket n° {} en attente d'envoi au PREA".format(record.reference))
 
         # 5 - Envoyer un SMS Phone au citoyen
         # status_code = self.send_sms_via_orange(
@@ -462,7 +462,7 @@ class Plainte(models.Model):
                     action = "Envoi du ticket aux admin PREA",
                     statut = "state_validate_prea",
                     notif_sender = "Ticket envoyée au PREA",
-                    notif_receiver = "Ticket n° {} en attente de validation".foramt(rec.reference))
+                    notif_receiver = "Ticket n° {} en attente de validation".format(rec.reference))
         else:
             return {
                 'type': 'ir.actions.client',
