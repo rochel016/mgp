@@ -238,9 +238,7 @@
                 options="{'no_create_edit': True, 'no_create': True, 'no_open': True}"
                 attrs="{'readonly':['|', ('check_write', '=', True), ('statut', '!=', 'state')]}"/>
               
-              <field name="categorie_id" placeholder="Seléctionner la catégorie de plainte" 
-                options="{'no_create_edit': True, 'no_create': True, 'no_open': True}"
-                attrs="{'readonly':['|', ('check_write', '=', True), ('statut', '!=', 'state')]}"/>
+              <field name="langue" attrs="{'readonly':['|', ('check_write', '=', True), ('statut', '!=', 'state')]}"/>
             </group>
 
             <group>
@@ -269,7 +267,11 @@
             </group>
           </group>
 
-          <group>  
+          <group>
+            <field name="categorie_id" placeholder="Seléctionner la catégorie de plainte" 
+                options="{'no_create_edit': True, 'no_create': True, 'no_open': True}"
+                attrs="{'readonly':['|', ('check_write', '=', True), ('statut', '!=', 'state')]}"/>
+
             <field name="ennonce" string="Plainte/Doléance" placeholder="Exposez ici l'ennoncé de la plainte"
               attrs="{'readonly':['|', ('check_write', '=', True), ('statut', '!=', 'state')]}" height="250"/>
           </group>

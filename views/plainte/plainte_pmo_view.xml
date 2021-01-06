@@ -166,11 +166,6 @@
                 style="width: 200px" attrs="{'invisible': [('statut', '!=', 'state_invalid')]}">
                 <field name="statut_display" widget="statinfo"/>
             </button>
-
-            <!-- Group Receiver actuel-->
-            <button name="get_actual_group_name" type="object" class="oe_stat_button" icon="fa-group text-danger" style="width: 200px">
-              <field name="actual_group_name" widget="statinfo"/>
-            </button>
           </div>
 
           <!-- Title -->
@@ -188,8 +183,7 @@
                 options="{'no_create_edit': True, 'no_create': True, 'no_open': True}" />
               <field name="tranche_id" readonly="1"
                 options="{'no_create_edit': True, 'no_create': True, 'no_open': True}" />
-              <field name="categorie_id" readonly="1"
-                options="{'no_create_edit': True, 'no_create': True, 'no_open': True}" />
+              <field name="langue" readonly="1" />
             </group>
             <group>
               <field name="region_id" readonly="1"
@@ -205,7 +199,9 @@
             </group>
           </group>
 
-          <group>  
+          <group>
+            <field name="categorie_id" readonly="1"
+                options="{'no_create_edit': True, 'no_create': True, 'no_open': True}" />
             <field name="ennonce" string="Plainte/Doléance" readonly="1" />
           </group>
 

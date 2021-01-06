@@ -87,6 +87,9 @@
         <field name="resultat" invisible="1"/> <!--IMPORTANT -->
         <field name="situation" invisible="1"/> <!--IMPORTANT -->
         <field name="is_reprocessed" invisible="1"/>
+        
+        <!--Si avoir droit de modifier certains champs (voir field/méthode dans plainte.py: _check_write )-->
+        <field name="check_write" invisible="1" />
 
         <header>
           <!--Group receiver of current user ('is_last_group_receiver', '=', False) -->
@@ -219,18 +222,13 @@
 
           <!-- Fields -->
           <group>
-            <group>
-              <!--Si avoir droit de modifier certains champs (voir field/méthode dans plainte.py: _check_write )-->
-              <field name="check_write" invisible="1" />
-
-              <!--Si avoir droit de modifier les 2 champs (voir field/méthode dans plainte.py: _check_write_response )-->
-              <field name="check_write_response" invisible="1" />
-              
+            <group>              
               <field name="date_appel" readonly="1"/>
               <field name="date_event" readonly="1"/>
               <field name="genre" readonly="1"/>
               <field name="education_id" readonly="1" options="{'no_create_edit': True, 'no_create': True, 'no_open': True}"/>
               <field name="tranche_id" readonly="1" options="{'no_create_edit': True, 'no_create': True, 'no_open': True}"/>
+              <field name="langue" readonly="1"/>
             </group>
 
             <group>
@@ -240,13 +238,10 @@
               <field name="fokontany_id" readonly="1" options="{'no_create_edit': True, 'no_create': True, 'no_open': True}"/>
               <field name="composante_id" readonly="1" options="{'no_create_edit': True, 'no_create': True, 'no_open': True}"/>
             </group>
-
-            <group>
-              <field name="categorie_id" readonly="1" options="{'no_create_edit': True, 'no_create': True, 'no_open': True}"/>
-            </group>
           </group>
 
-          <group> 
+          <group>
+            <field name="categorie_id" readonly="1" options="{'no_create_edit': True, 'no_create': True, 'no_open': True}"/>
             <field name="ennonce" string="Plainte/Doléance" placeholder="Exposez ici l'ennoncé de la plainte"
               attrs="{'readonly':['|', ('check_write', '=', True), ('statut', '=', 'state_invalid')]}"/>
           </group>

@@ -19,6 +19,9 @@
         "security/security.xml",
         "security/ir.model.access.csv",
 
+        # Data
+        'data/mail_cron.xml',
+
         # Assets files (js, css)
         "static/src/xml/assets.xml",
 
@@ -54,6 +57,10 @@
 
         # Gestion des menus
         'static/src/xml/menu.xml',
+
+        # Reports
+        "reports/ticket_view.xml",
+        "reports/report.xml",
     ],
     
     'application': True,

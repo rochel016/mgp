@@ -173,7 +173,9 @@ class Plainte(models.Model):
         for rec in self:
             log = self.env['mgp.plainte_log'].search([('plainte_id','=', rec.id)], order='create_date desc', limit=1)
             if log is not None:
-                self.actual_group_name = log.group_receiver_id.name
+                rec.actual_group_name = log.group_receiver_id.name
+                if rec.statut == 'state_traitement_pmo' and self.env.user.has_group('mgp.mgp_gouvernance_prea'):
+                    rec.actual_group_name = rec.user_pmo_name # Renvoyer le nol de l'utilisateur du PMO
 
     # ID: Dernier group qui detient le ticket  (Le group receveur)
     def _get_actual_group_id(self):
@@ -186,8 +188,11 @@ class Plainte(models.Model):
     def get_jours_traitement(self):
         """ Renvoie le nombre de jour de traitement du ticket """
         for rec in self:
-            from datetime import timedelta
-            rec.jours_traitement = datetime.now().day - rec.date_appel.day + 1 # Le premier jour est considéré une journée
+            import datetime
+            d1 = datetime.date(rec.date_appel.year,rec.date_appel.month,rec.date_appel.day)
+            d2 = datetime.date.today()
+            d3 = d2 - d1
+            rec.jours_traitement = d3.days
 
     zone = fields.Char(compute='_get_localisation')
     def _get_localisation(self):
@@ -197,8 +202,6 @@ class Plainte(models.Model):
             # rec.zone = '{} / {} / {}'.format(rec.region_id.name, rec.district_id.name, rec.commune_id.name) 
             # if rec.fokontany_id:
             #     rec.zone += ' / {}'.format(rec.fokontany_id.name)
-    
-    user_id = fields.Integer(default=8, store=False)
 
     # -------------------------------------------------------
     # ----------------- GROUP Contraintes -------------------
@@ -374,17 +377,6 @@ class Plainte(models.Model):
             }
 
     # -------------------------------------------------------
-    # ----------- Envoyer un message/notification -----------
-    # -------------------------------------------------------
-    def _action_send_sms(self, plainte_id, message):
-        """
-        Envoyer un message (notification)
-        """
-        if id and message:
-            event = self.env['mgp.plainte'].search([('id', '=', plainte_id)])
-            event.message_post(body=message)
-
-    # -------------------------------------------------------
     # --------------- Workflow : BPO ACTIONS ----------------
     # -------------------------------------------------------
     @api.model
@@ -416,10 +408,7 @@ class Plainte(models.Model):
             notif_sender = "Ticket créé",
             notif_receiver = "Ticket créé")
 
-        # 5 - Envoyer un message au tiket créé
-        self._action_send_sms(record.id, "Ticket n° {} créé avec succes.".format(record.reference))
-
-        # 6 - Envoyer un SMS Phone au citoyen
+        # 5 - Envoyer un SMS Phone au citoyen
         # status_code = self.send_sms_via_orange(
         #     adresse = record.tel[1:], # les 9 derniers chiffres uniquement
         #     senderAddress = '320450952',
@@ -474,9 +463,6 @@ class Plainte(models.Model):
                     statut = "state_validate_prea",
                     notif_sender = "Ticket envoyée au PREA",
                     notif_receiver = "Ticket reçu du BPO")
-
-                # 3 - Envoyer un message au tiket créé
-                self._action_send_sms(rec.id, "Le ticket n° {} a été envoyée aux admin PREA.".format(rec.reference))
         else:
             return {
                 'type': 'ir.actions.client',
@@ -512,9 +498,6 @@ class Plainte(models.Model):
                     statut = "state_send_response_bpo",
                     notif_sender = "Citoyen joignable",
                     notif_receiver = "Le citoyen est joignable")
-                
-                # 3 - Envoyer un message au tiket (réponse)
-                self._action_send_sms(rec.id, "Le citoyen ayan le ticket n°{} est joignable.".format(rec.reference))
         else:
             return {
                 'type': 'ir.actions.client',
@@ -550,9 +533,6 @@ class Plainte(models.Model):
                     statut = "state_done_bpo",
                     notif_sender = "Citoyen injoignable",
                     notif_receiver = "Le citoyen est injoignable")
-                
-                # 3 - Envoyer un message au tiket (réponse)
-                self._action_send_sms(rec.id, "Le citoyen ayant le ticket n° {} est injoignable.".format(rec.reference))
         else:
             return {
                 'type': 'ir.actions.client',
@@ -588,9 +568,6 @@ class Plainte(models.Model):
                     statut = "state_done_bpo",
                     notif_sender = "Citoyen satisfait",
                     notif_receiver = "Le citoyen est satisfait")
-                
-                # 3 - Envoyer un message au tiket (réponse)
-                self._action_send_sms(rec.id, "Le citoyen ayant le ticket n° {} est satisfait.".format(rec.reference))
         else:
             return {
                 'type': 'ir.actions.client',
@@ -628,9 +605,6 @@ class Plainte(models.Model):
                     statut = "state_eval_response_prea",
                     notif_sender = "Ticket renvoyé au PREA pour retraitement",
                     notif_receiver = "Le ticket est renvoyé pour retraitement au niveau du PMO")
-                
-                # 3 - Envoyer un message au tiket (réponse)
-                self._action_send_sms(rec.id, "Le citoyen ayant le ticket n° {} est non satisfait.".format(rec.reference))
         else:
             return {
                 'type': 'ir.actions.client',
@@ -667,9 +641,6 @@ class Plainte(models.Model):
                     statut = "state_invalid",
                     notif_sender = "Ticket annulé",
                     notif_receiver = "Ticket annulé par PREA")
-                
-                # 3 - Envoyer un message au tiket annulé
-                self._action_send_sms(rec.id, "Le ticket n° {} a été annulé par les admin PREA.".format(rec.reference))
         else:
             return {
                 'type': 'ir.actions.client',
@@ -715,8 +686,8 @@ class Plainte(models.Model):
                     notif_sender = "Ticket envoyé au PMO",
                     notif_receiver = "Ticket reçu du PREA")
                 
-                # 3 - Envoyer un message au tiket envoyée au PMO
-                self._action_send_sms(rec.id, "Le ticket n° {} a été envoyée au PMO ({})".format(rec.reference, rec.user_pmo_id.name))
+                # 3 - Envoyer un sms au citoyen pour info que le ticket est déjà en traitement
+                # ???
         else:
             return {
                 'type': 'ir.actions.client',
@@ -763,9 +734,6 @@ class Plainte(models.Model):
                     statut = "state_send_response_bpo",
                     notif_sender = "Réponse envoyée au BPO",
                     notif_receiver = "Réponse reçue du PREA")
-                
-                # 3 - Envoyer un message au tiket (réponse)
-                self._action_send_sms(rec.id, "Une réponse du ticket n°{} a été envoyée au BPO.".format(rec.reference))
         else:
             return {
                 'type': 'ir.actions.client',
@@ -801,9 +769,6 @@ class Plainte(models.Model):
                     statut = "state_closed_prea",
                     notif_sender = "Ticket fermé",
                     notif_receiver = "Le ticket est fermé")
-                
-                # 3 - Envoyer un message au tiket (réponse)
-                self._action_send_sms(rec.id, "Le ticket n° {} a été fermée par le PREA.".format(rec.reference))
         else:
             message = ''
             if (self.situation!='injoignable' or self.resultat!='satisfat'):
@@ -883,9 +848,6 @@ class Plainte(models.Model):
                     statut = "state_eval_response_prea",
                     notif_sender = "Réponse envoyée au PREA",
                     notif_receiver = "Réponse reçue du PMO")
-                
-                # 3 - Envoyer un message au tiket (réponse)
-                self._action_send_sms(rec.id, "Une réponse du ticket n°{} a été envoyée au PREA.".format(rec.reference))
         else:
             return {
                 'type': 'ir.actions.client',
@@ -1021,12 +983,30 @@ class Plainte(models.Model):
     # -------------------------------------------------------
     # --------------- Gestion de MAIL personna --------------
     # -------------------------------------------------------
-    def send_email(self):
+    def _send_email(self, user_id):
         temp = self.env.ref('mgp.mgp_email_template')
         if temp:
             # example: user - instance of res.users
-            temp.sudo().with_context().send_mail(self.env.uid, force_send=True)
-    
+            temp.sudo().with_context().send_mail(user_id, force_send=True)
+
+    @api.model
+    def send_email_prea_job(self):
+        print("Sending email to RPEA users at {}".format(datetime.now().strftime("%d/%m/%Y, %H:%M:%S")))
+        self.env.cr.execute("SELECT uid FROM res_groups_users_rel WHERE gid = {}".format(self.env.ref( "mgp.mgp_gouvernance_prea" ).id))
+        users_pmo_ids = self.env.cr.fetchall()
+        
+        for user_id in users_pmo_ids:
+            self._send_email(user_id[0])
+
+    @api.model
+    def send_email_pmo_job(self):
+        print("Sending email to RMO users at {}".format(datetime.now().strftime("%d/%m/%Y, %H:%M:%S")))
+        self.env.cr.execute("SELECT uid FROM res_groups_users_rel WHERE gid = {}".format(self.env.ref( "mgp.mgp_gouvernance_pmo" ).id))
+        users_pmo_ids = self.env.cr.fetchall()
+        
+        for user_id in users_pmo_ids:
+            self._send_email(user_id[0])
+
 
     # -------------------------------------------------------
     # --------------- Controle CRUD with status -------------

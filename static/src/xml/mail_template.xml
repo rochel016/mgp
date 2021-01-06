@@ -11,11 +11,11 @@
           <field name="auto_delete" eval="True"/>
 	  <field name="body_html">
         <![CDATA[
-	      <p>Dear ${(object.name)},<br/><br/>
-	      Good job, you've just created your first e-mail template!<br/></p>
-              Regards,<br/>
-              ${(object.company_id.name)}
-	    ]]>
+          <p>Madame/Monsieur ${(object.name)},<br/><br/>
+          Vous avez des tickets à traiter: <br/></p>
+          Cordialement,<br/>
+          ${(object.company_id.name)}
+	      ]]>
 	  </field>
        </record>
     </data>
