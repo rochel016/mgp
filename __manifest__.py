@@ -10,7 +10,7 @@
     'license': "AGPL-3", 
     'website': "https://digital.gov.mg/",
     # 'category': 'Gouvernance',
-    'version': '1.0.0',
+    'version': '1.0.0 - Beta 4',
     'depends': ['base', 'mail', 'board'],
     'qweb': [
         'static/src/xml/icon_systray.xml'],

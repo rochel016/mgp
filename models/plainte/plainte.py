@@ -21,7 +21,7 @@ class Plainte(models.Model):
     langue = fields.Selection([
         ('MG', 'Malagasy'),
         ('FR', 'Français'),
-    ], string="Langue du citoyen", default="MG")
+    ], string="Langue du citoyen", default="MG", required=True)
 
     def _get_default_region(self):
         """
@@ -406,7 +406,7 @@ class Plainte(models.Model):
             action = "Création d'un nouveau ticket",
             statut = "state",
             notif_sender = "Ticket créé",
-            notif_receiver = "Ticket créé")
+            notif_receiver = "Ticket n° {} en attente d'envoi au PREA".foramt(record.reference))
 
         # 5 - Envoyer un SMS Phone au citoyen
         # status_code = self.send_sms_via_orange(
@@ -462,7 +462,7 @@ class Plainte(models.Model):
                     action = "Envoi du ticket aux admin PREA",
                     statut = "state_validate_prea",
                     notif_sender = "Ticket envoyée au PREA",
-                    notif_receiver = "Ticket reçu du BPO")
+                    notif_receiver = "Ticket n° {} en attente de validation".foramt(rec.reference))
         else:
             return {
                 'type': 'ir.actions.client',
@@ -497,7 +497,7 @@ class Plainte(models.Model):
                     action = "Joindre le citoyen",
                     statut = "state_send_response_bpo",
                     notif_sender = "Citoyen joignable",
-                    notif_receiver = "Le citoyen est joignable")
+                    notif_receiver = "Le citoyen est joignable pour le ticket n° {}".format(rec.reference))
         else:
             return {
                 'type': 'ir.actions.client',
