@@ -22,3 +22,4 @@ plainte_note_user_pmo,Mgp user,model_mgp_plainte_note,mgp.mgp_gouvernance_pmo,1,
 plainte_reponse_user_operateur,Mgp user,model_mgp_plainte_reponse,mgp.mgp_gouvernance_operateur,1,0,0,0
 plainte_reponse_user_prea,Mgp user,model_mgp_plainte_reponse,mgp.mgp_gouvernance_prea,1,0,0,0
 plainte_reponse_user_pmo,Mgp user,model_mgp_plainte_reponse,mgp.mgp_gouvernance_pmo,1,1,1,1
+custom_dashboard_user_prea,Mgp user,model_mgp_custom_dashboard,mgp.mgp_gouvernance_prea,1,1,1,1

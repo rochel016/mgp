@@ -1,4 +1,55 @@
 <odoo>
+    <!--Kanban-->
+    <record id="plainte_prea_kanban_view_board" model="ir.ui.view">
+        <field name="name">plainte.kanban.view</field>
+        <field name="model">mgp.custom_dashboard</field>
+        <field name="arch" type="xml">
+            <kanban class="oe_background_grey o_kanban_dashboard o_project_kanban">
+                <field name="category"/>
+                <templates>
+                    <t t-name="kanban-box">
+                        <div class="oe_kanban_global_click mgp_kanban_tasks_ext">
+                            <center>
+                                <t t-if="record.category.raw_value=='A'">
+                                    <h1><em><field name="total_citoyens"/></em> - Plaintes</h1>
+                                </t>
+                                <t t-if="record.category.raw_value=='B'">
+                                    <h1><em><field name="total_femmes"/></em> - Femmes</h1>
+                                </t>
+                                <t t-if="record.category.raw_value=='C'">
+                                    <h1><em><field name="total_hommes"/></em> - Hommes</h1>
+                                </t>
+                                <t t-if="record.category.raw_value=='D'">
+                                    <h1><em><field name="total_mineurs"/></em> - Mineurs</h1>
+                                </t>
+                                <t t-if="record.category.raw_value=='E'">
+                                    <h1><em><field name="total_traites"/></em> - Traités</h1>
+                                </t>
+                                <t t-if="record.category.raw_value=='F'">
+                                    <h1><em><field name="total_currents"/></em> - En cours</h1>
+                                </t>
+                                <t t-if="record.category.raw_value=='G'">
+                                    <h1><em><field name="total_satisfaits"/></em> - Citoyens satisfaits</h1>
+                                </t>
+                                <t t-if="record.category.raw_value=='H'">
+                                    <h1><em><field name="total_in_satisfaits"/></em> - Citoyens insatisfaits</h1>
+                                </t>
+                            </center>
+                        </div> 
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+    
+    <record id="prea_act_plainte_mgp_kanban" model="ir.actions.act_window">
+        <field name="name">Récapitulatifs des plaintes</field>
+        <field name="res_model">mgp.custom_dashboard</field>
+        <field name="view_mode">kanban</field>
+        <field name="view_id" ref="mgp.plainte_prea_kanban_view_board"/>
+    </record>
+
+    <!--TCD-->
     <record id="prea_act_plainte_mgp_pivot" model="ir.actions.act_window">
         <field name="name">Plaintes des citoyens</field>
         <field name="res_model">mgp.plainte</field>
@@ -51,13 +102,15 @@
         <field name="model">board.board</field>
         <field name="arch" type="xml">
             <form string="Dashboard">
-                <board style="2-3">
+                <board style="1">
                     <column>
-                        <action string="Plaintes - Statut" name="%(mgp.prea_act_plainte_mgp_graph_1)d" />
-                        <action string="Plaintes - Catégorie" name="%(mgp.prea_act_plainte_mgp_graph_2)d" />
-                    </column>
-                    <column>
+                        <action string="Plaintes - Récapitulatif" name="%(mgp.prea_act_plainte_mgp_kanban)d" />
+                    
                         <action string="Plaintes - TCD" name="%(mgp.prea_act_plainte_mgp_pivot)d" />
+                    
+                        <action string="Plaintes - Statut" name="%(mgp.prea_act_plainte_mgp_graph_1)d" />
+                    
+                        <action string="Plaintes - Catégorie" name="%(mgp.prea_act_plainte_mgp_graph_2)d" />
                     </column>
                 </board>
             </form>

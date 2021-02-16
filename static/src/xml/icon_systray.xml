@@ -1,15 +1,14 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <templates>
-    <t t-name="systray_ticket.icon">
-        <li class="new_icon">
-            <label class="my_icon" style="margin-bottom:0px; cursor:pointer;" title="Tickets à traiter">
-                <div class="icon_div">
-                    <div class="toggle-icon">
-                        <i class="fa fa-bell" style="color:yellow;" id="fa-bell"/>
-                        <sup id="tickets_count_id"></sup>
-                    </div>
-                </div>
-            </label>
+    <t t-name="mgp.ticket_systray" >
+        <li class="o_ticket_systray_item">
+            <a class="dropdown-toggle o-no-caret a_ticket_systray_item" data-toggle="dropdown" data-display="static" aria-expanded="false" title="Tickets" href="#" role="button">
+                <i class="fa fa-bell" style="color:yellow;" role="img" aria-label="Tickets à traiter"/>
+                <sup class="o_mgp_counter"></sup>
+            </a>
+            <div class="dropdown-menu dropdown-menu-right" style="border-radius: 1px;">
+                <div class="tickets_list_notif"/>
+            </div>
         </li>
     </t>
 </templates>

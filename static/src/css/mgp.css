@@ -19,3 +19,11 @@
     padding: 6px 10px;
     cursor: pointer;
 }
+
+.tickets_list_notif {
+    padding: 3px;
+    background: white;
+    width:300px;
+    max-height: 200px;
+    overflow-y:scroll;
+} 

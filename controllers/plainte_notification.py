@@ -34,7 +34,7 @@ class PlainteNotification(http.Controller):
                 and group_receiver_id = {})
                 and user_pmo_id =  {}""".format(sql_count_partial, current_group_id, request.uid) # User PMO
             
-            sql_tickets = """select mgp_plainte.reference, mgp_plainte_log.notif_receiver from mgp_plainte_log
+            sql_tickets = """select mgp_plainte.id, mgp_plainte.reference, mgp_plainte_log.notif_receiver from mgp_plainte_log
                 inner join mgp_plainte on mgp_plainte.id = mgp_plainte_log.plainte_id 
                 where mgp_plainte_log.id in (select max(id) from mgp_plainte_log group by plainte_id)
                 and mgp_plainte_log.statut in {}
@@ -54,7 +54,7 @@ class PlainteNotification(http.Controller):
                 where id in (select max(id) from mgp_plainte_log group by plainte_id)
                 and statut in {} and group_receiver_id = {};""".format(sql_count_partial, current_group_id)
             
-            sql_tickets = """select mgp_plainte.reference, mgp_plainte_log.notif_receiver from mgp_plainte_log
+            sql_tickets = """select mgp_plainte.id, mgp_plainte.reference, mgp_plainte_log.notif_receiver from mgp_plainte_log
                 inner join mgp_plainte on mgp_plainte_log.plainte_id = mgp_plainte.id
                 where mgp_plainte_log.id in (select max(id) from mgp_plainte_log group by plainte_id)
                 and mgp_plainte_log.statut in {}
@@ -73,7 +73,17 @@ class PlainteNotification(http.Controller):
             request.env.cr.execute(sql_tickets)
             tickets = request.env.cr.fetchall()
 
+        # CURRENT USER VIEW (Besoin de l'ID du formulaire du ticket de l'utilisateur en cours) 
+        view_id = 0
+        if request.env.user.has_group('mgp.mgp_gouvernance_prea'):
+            view_id = request.env.ref('mgp.plainte_prea_form_view').id
+        elif request.env.user.has_group('mgp.mgp_gouvernance_pmo'):
+            view_id = request.env.ref('mgp.plainte_pmo_form_view').id
+        elif request.env.user.has_group('mgp.mgp_gouvernance_operateur'):
+            view_id = request.env.ref('mgp.plainte_bpo_form_view').id
+
         return {
             'count' : count,
-            'tickets' : tickets
+            'tickets' : tickets,
+            'view_id': view_id # IMPORTANT !!!
         }

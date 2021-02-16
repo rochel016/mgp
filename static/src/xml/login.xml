@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <template id="web.login" name="Login">
+            <style>
+                .form_wrapper{
+                background:#fff;
+                border:1px solid #ddd;
+                margin:0 auto;
+                width:350px;
+                -moz-box-shadow:1px 1px 7px #ccc;
+                -webkit-box-shadow:1px 1px 7px #ccc;
+                box-shadow:5px 5px 7px #ccc;
+                
+                font-family: "Times New Roman", Georgia, Serif;
+                }
+                .form_wrapper h3{
+                padding:20px 30px 20px 30px;
+                background-color:#28517A;
+                color:#f00;
+                font-size:25px;
+                border-bottom:1px solid #ddd;
+                }
+                .form_wrapper h1{
+                padding:20px 30px 50px 30px;
+                background-color:#28517A;
+                color:#fff;
+                font-size:25px;
+                border-bottom:1px solid #ddd;
+                }
+                .form_wrapper form{ 
+                background:#f00;
+                }
+                .form_wrapper label, h1{
+                display:block;
+                padding:0px 30px 0px;
+                margin:10px 0px 0px 0px;
+                
+                font-family: "Times New Roman", Georgia, Serif;;
+                font-weight: lighter;
+                font-size: 16px;
+                }
+                .form_wrapper input[type="text"],
+                .form_wrapper input[type="password"]{
+                border: solid 1px #538A15;
+                background: #FFFFFF;
+                margin: 5px 30px 0px 30px;
+                padding: 9px;
+                display:block;
+                font-size:16px;
+                width:76%;
+                background:
+                -webkit-gradient(
+                linear,
+                left top,
+                left 25,
+                from(#FFFFFF),
+                color-stop(4%, #EEEEEE),
+                to(#FFFFFF)
+                );
+                background:
+                -moz-linear-gradient(
+                top,
+                #FFFFFF,
+                #538A15 1px,
+                #FFFFFF 25px
+                );
+                -moz-box-shadow: 0px 0px 8px #f0f0f0;
+                -webkit-box-shadow: 0px 0px 8px #f0f0f0;
+                box-shadow: 0px 0px 8px #f0f0f0;
+                }
+                .form_wrapper input[type="text"]:focus,
+                .form_wrapper input[type="password"]:focus{
+                background:#feffef;
+                }
+                
+                .form_wrapper button[type="submit"] {
+	                background: #538A15;
+	                border: 1px solid #ccc;
+	                color: #333;
+	                font-family: "Trebuchet MS", "Myriad Pro", sans-serif;
+	                font-size: 14px;
+	                font-weight: bold; 
+	                text-align: center;
+	                width: 150px;
+	                        height: 35px;
+	                cursor:pointer;
+	                float:right;
+	                margin: 0px 80px 30px 0px;
+	                text-shadow: 0px 1px 0px #fff;
+	                -moz-border-radius: 4px;
+	                -webkit-border-radius: 4px;
+	                border-radius: 4px;
+	                -moz-box-shadow: 0px 0px 2px #fff inset;
+	                -webkit-box-shadow: 0px 0px 2px #fff inset;
+	                box-shadow: 0px 0px 2px #fff inset;
+                }
+                .form_wrapper button[type="submit"]:hover {
+                background: #d9d9d9;
+                -moz-box-shadow: 0px 0px 2px #eaeaea inset;
+                -webkit-box-shadow: 0px 0px 2px #eaeaea inset;
+                box-shadow: 0px 0px 2px #eaeaea inset;
+                color: #222;
+                
+                }
+            </style>
+            <t t-call="web.login_layout">
+
+                <form class="form_wrapper" role="form" t-attf-action="/web/login{{ '?debug' if debug else '' }}" method="post" onsubmit="this.action = this.action + location.hash">
+                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+     
+                    <h3>Login</h3>
+     
+                    <div class="form-group field-db" t-if="databases and len(databases) &gt; 1">
+                        <label for="db" class="control-label">Database</label>
+                        <div class="input-group">
+                            <input type="text" name="db" t-att-value="request.db" id="db" class="form-control" required="required" readonly="readonly"/>
+                            <span class="input-group-btn">
+                              <a href="/web/database/selector" class="btn btn-default">Select <i class="fa fa-database"></i></a>
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="form-group field-login">
+                        <label for="login" class="control-label">Username</label>
+                        <input type="text" name="login" t-att-value="login" id="login" class="form-control" required="required" autofocus="autofocus"/>
+                    </div>
+
+                    <div class="form-group field-password">
+                        <label for="password" class="control-label">Password</label>
+                        <input type="password" name="password" id="password" class="form-control" required="required" t-att-autofocus="'autofocus' if login else None"/>
+                    </div>
+
+                    <p class="alert alert-danger" t-if="error">
+                        <t t-esc="error"/>
+                    </p>
+                    <p class="alert alert-success" t-if="message">
+                        <t t-esc="message"/>
+                    </p>
+
+                    <input type="hidden" name="redirect" t-att-value="redirect"/>
+                 <h1><button type="submit" >Login</button> </h1>
+
+                </form>
+            </t>
+        </template>
+    </data>
+</odoo>

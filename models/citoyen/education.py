@@ -2,7 +2,7 @@ from odoo import models, fields
 
 class Education(models.Model):
     _name = 'mgp.citoyen_education'
-    _description = "MGP Paramétrage des niveraux d'éducation du cytoyen"
+    _description = "MGP Paramétrage des niveaux d'éducation du cytoyen"
 
     name = fields.Char(string="Nom", required=True) # Ex: Tsy nianatra, primaite, secondaire, bac, universitaire, cadre, ...²
     

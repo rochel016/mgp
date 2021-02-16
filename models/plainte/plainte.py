@@ -3,15 +3,18 @@ from datetime import datetime
 import re  # for matching
 from odoo.exceptions import ValidationError
 import requests # API curl (SMS tel)
+from .sms import Sms
+
+NEW_TICKET = "NOUVEAU"
 
 class Plainte(models.Model):
     _name = 'mgp.plainte'
     _description = "Gestion et Suivi des plaintes"
-    _inherit = ['mail.thread', 'mail.activity.mixin']
+    _inherit = ['mail.thread',] #, 'mail.activity.mixin'
     _order = "date_appel desc"
     _rec_name = 'reference' # Sur la navigation 
 
-    reference = fields.Char(string="Plainte No", readonly=True, required=True, copy=False, default= 'NOUVEAU')
+    reference = fields.Char(string="Plainte No", readonly=True, required=True, copy=False, default=NEW_TICKET)
     date_appel = fields.Datetime(string="Date d'appel", required=True, default=lambda self: fields.datetime.now())
     date_event = fields.Datetime(string="Date d'événement")
     
@@ -36,7 +39,6 @@ class Plainte(models.Model):
 
     # Localisation : Non stockée dans la base mais juste pour faciliter la recherche de commune (selectoin de dependance)
     region_id = fields.Many2one('mgp.loc_region', store=False, required=True, string="Région", default=_get_default_region)
-
     
     def _get_default_district(self):
         """
@@ -175,7 +177,7 @@ class Plainte(models.Model):
             if log is not None:
                 rec.actual_group_name = log.group_receiver_id.name
                 if rec.statut == 'state_traitement_pmo' and self.env.user.has_group('mgp.mgp_gouvernance_prea'):
-                    rec.actual_group_name = rec.user_pmo_name # Renvoyer le nol de l'utilisateur du PMO
+                    rec.actual_group_name = rec.user_pmo_name # Renvoyer le nom de l'utilisateur du PMO
 
     # ID: Dernier group qui detient le ticket  (Le group receveur)
     def _get_actual_group_id(self):
@@ -342,7 +344,7 @@ class Plainte(models.Model):
         """
         Créer le journal(log) à chaque action sur un ticket(plainte)
         """
-        self.env['mgp.plainte_log'].create({
+        log = self.env['mgp.plainte_log'].create({
             'plainte_id': plainte_id,
             'action': action,
             'statut': statut,
@@ -351,6 +353,8 @@ class Plainte(models.Model):
             'notif_sender': notif_sender,
             'notif_receiver': notif_receiver
         })
+
+        return log 
 
     # -------------------------------------------------------
     # -------------------- Créer note -----------------------
@@ -390,34 +394,28 @@ class Plainte(models.Model):
         """
 
         # 1 GET YOUR SEQUENCE WITH LATEST INCREMENT RUNNING NUMBER
-        seq = self.env['ir.sequence'].next_by_code('mgp.plainte') or 'NOUVEAU'
+        seq = self.env['ir.sequence'].next_by_code('mgp.plainte') or NEW_TICKET
 
         # 2 SET THE SEQUENCE ON 'NAME' FIELD
         vals['reference'] = seq
 
-        # 3 RETURN SUPER TO EXTEND THE CREATE METHOD 
-        record = super(Plainte, self).create(vals)
+        # 3 RETURN SUPER TO EXTEND THE CREATE METHOD (without tracking)
+        rec = super(Plainte, self.with_context(tracking_disable=True)).create(vals) 
 
         # 4 - Log : après la création d'un nouveau ticket
-        self._do_log(
-            plainte_id = record.id, 
+        log = self._do_log(
+            plainte_id = rec.id, 
             group_sender_id = self.env.ref('mgp.mgp_gouvernance_operateur').id,
             group_receiver_id = self.env.ref('mgp.mgp_gouvernance_operateur').id,
             action = "Création d'un nouveau ticket",
             statut = "state",
-            notif_sender = "Ticket créé",
-            notif_receiver = "Ticket n° {} en attente d'envoi au PREA".format(record.reference))
+            notif_sender = "Ticket n° {} créé".format(rec.reference),
+            notif_receiver = "Ticket n° {} en attente d'envoi au PREA".format(rec.reference))
 
         # 5 - Envoyer un SMS Phone au citoyen
-        # status_code = self.send_sms_via_orange(
-        #     adresse = record.tel[1:], # les 9 derniers chiffres uniquement
-        #     senderAddress = '320450952',
-        #     message = 'Votre ticket n° {} a été créé le {}'.format(record.reference, record.create_date.strftime("%d/%m/%Y, %H:%M:%S")))
-        
-        #if status_code in (200)
+        status_code = self.send_sms(rec, log)
 
-
-        return record
+        return rec
 
     def unlink(self):
         """
@@ -455,14 +453,17 @@ class Plainte(models.Model):
                 rec.statut = 'state_validate_prea'
             
                 # 2 - Log : Envoi du ticket au PREA
-                self._do_log(
+                log = self._do_log(
                     plainte_id = rec.id,
                     group_sender_id = self.env.ref('mgp.mgp_gouvernance_operateur').id,
                     group_receiver_id = self.env.ref('mgp.mgp_gouvernance_prea').id,
                     action = "Envoi du ticket aux admin PREA",
                     statut = "state_validate_prea",
-                    notif_sender = "Ticket envoyée au PREA",
+                    notif_sender = "Ticket n° {} envoyé au PREA".format(rec.reference),
                     notif_receiver = "Ticket n° {} en attente de validation".format(rec.reference))
+                
+                # 3 - Envoyer un SMS Phone au citoyen
+                status_code = self.send_sms(rec, log)
         else:
             return {
                 'type': 'ir.actions.client',
@@ -490,14 +491,17 @@ class Plainte(models.Model):
                 rec.situation = 'joignable'
             
                 # 2 - Log : Citoyen joignable
-                self._do_log(
+                log = self._do_log(
                     plainte_id = rec.id,
                     group_sender_id = self.env.ref('mgp.mgp_gouvernance_operateur').id,
                     group_receiver_id = self.env.ref('mgp.mgp_gouvernance_prea').id,
                     action = "Joindre le citoyen",
                     statut = "state_send_response_bpo",
-                    notif_sender = "Citoyen joignable",
-                    notif_receiver = "Le citoyen est joignable pour le ticket n° {}".format(rec.reference))
+                    notif_sender = "Ticket n° {}, citoyen joignable".format(rec.reference),
+                    notif_receiver = "Ticket n° {}, citoyen joignable".format(rec.reference))
+                
+                # 3 - Envoyer un SMS Phone au citoyen
+                status_code = self.send_sms(rec, log)
         else:
             return {
                 'type': 'ir.actions.client',
@@ -525,14 +529,17 @@ class Plainte(models.Model):
                 rec.situation = 'injoignable'
             
                 # 2 - Log : citoyen injoignable
-                self._do_log(
+                log = self._do_log(
                     plainte_id = rec.id,
                     group_sender_id = self.env.ref('mgp.mgp_gouvernance_operateur').id,
                     group_receiver_id = self.env.ref('mgp.mgp_gouvernance_prea').id,
                     action = "Joindre le citoyen",
                     statut = "state_done_bpo",
-                    notif_sender = "Citoyen injoignable",
-                    notif_receiver = "Le citoyen est injoignable")
+                    notif_sender = "Ticket n° {}, citoyen injoignable".format(rec.reference),
+                    notif_receiver = "Ticket n° {}, citoyen injoignable".format(rec.reference))
+                
+                # 3 - Envoyer un SMS Phone au citoyen
+                status_code = self.send_sms(rec, log)
         else:
             return {
                 'type': 'ir.actions.client',
@@ -560,20 +567,23 @@ class Plainte(models.Model):
                 rec.resultat = 'satisfait'
             
                 # 2 - Log : citoyen satisfait
-                self._do_log(
+                log = self._do_log(
                     plainte_id = rec.id,
                     group_sender_id = self.env.ref('mgp.mgp_gouvernance_operateur').id,
                     group_receiver_id = self.env.ref('mgp.mgp_gouvernance_prea').id,
-                    action = "Réponse du client",
+                    action = "Réponse du citoyen",
                     statut = "state_done_bpo",
-                    notif_sender = "Citoyen satisfait",
-                    notif_receiver = "Le citoyen est satisfait")
+                    notif_sender = "Ticket n° {}, citoyen satisfait".format(rec.reference),
+                    notif_receiver = "Ticket n° {}, citoyen satisfait".format(rec.reference))
+                
+                # 3 - Envoyer un SMS Phone au citoyen
+                status_code = self.send_sms(rec, log)
         else:
             return {
                 'type': 'ir.actions.client',
                 'tag': 'display_notification',
                 'params': {
-                    'title': _("Réponse du client"),
+                    'title': _("Réponse du citoyen"),
                     'message': _("Seul l'opérateur BPO peut faire cette action."),
                     'type':'danger',  
                     'sticky': False,
@@ -597,14 +607,17 @@ class Plainte(models.Model):
                 rec.situation = None # TRES IMPORTANT
             
                 # 2 - Log : Renvoi du ticket au PREA
-                self._do_log(
+                log = self._do_log(
                     plainte_id = rec.id,
                     group_sender_id = self.env.ref('mgp.mgp_gouvernance_operateur').id,
                     group_receiver_id = self.env.ref('mgp.mgp_gouvernance_prea').id,
                     action = "Renvoi du ticket au PREA (insatisfaction)",
                     statut = "state_eval_response_prea",
-                    notif_sender = "Ticket renvoyé au PREA pour retraitement",
-                    notif_receiver = "Le ticket est renvoyé pour retraitement au niveau du PMO")
+                    notif_sender = "Ticket n° {} renvoyé par PREA".format(rec.reference),
+                    notif_receiver = "Ticket n° {} à retraiter par le PMO".format(rec.reference))
+                
+                # 3 - Envoyer un SMS Phone au citoyen
+                status_code = self.send_sms(rec, log)
         else:
             return {
                 'type': 'ir.actions.client',
@@ -633,14 +646,17 @@ class Plainte(models.Model):
                 rec.statut = 'state_invalid'
 
                 # 2 - Log : Annuler le ticket (le ticket devient invalide)
-                self._do_log(
+                log = self._do_log(
                     plainte_id = rec.id,
                     group_sender_id = self.env.ref('mgp.mgp_gouvernance_prea').id,
                     group_receiver_id = self.env.ref('mgp.mgp_gouvernance_prea').id,
                     action = "Annulation du ticket",
                     statut = "state_invalid",
-                    notif_sender = "Ticket annulé",
-                    notif_receiver = "Ticket annulé par PREA")
+                    notif_sender = "Ticket n° {} annulé".format(rec.reference),
+                    notif_receiver = "Ticket n° {} annulé par PREA".format(rec.reference))
+                
+                # 3 - Envoyer un SMS Phone au citoyen
+                status_code = self.send_sms(rec, log)
         else:
             return {
                 'type': 'ir.actions.client',
@@ -677,17 +693,17 @@ class Plainte(models.Model):
                 rec.statut = 'state_traitement_pmo'
 
                 # 2 - Log : Envoi du ticket au PMO
-                self._do_log(
+                log = self._do_log(
                     plainte_id = rec.id,
                     group_sender_id = self.env.ref('mgp.mgp_gouvernance_prea').id,
                     group_receiver_id = self.env.ref('mgp.mgp_gouvernance_pmo').id,
                     action = "Envoi du ticket au PMO ({})".format(rec.user_pmo_id.name),
                     statut = "state_traitement_pmo",
-                    notif_sender = "Ticket envoyé au PMO",
-                    notif_receiver = "Ticket reçu du PREA")
+                    notif_sender = "Ticket n° {} envoyé au PMO".format(rec.reference),
+                    notif_receiver = "Ticket n° {} reçu du PREA".format(rec.reference))
                 
-                # 3 - Envoyer un sms au citoyen pour info que le ticket est déjà en traitement
-                # ???
+                # 3 - Envoyer un SMS Phone au citoyen
+                status_code = self.send_sms(rec, log)
         else:
             return {
                 'type': 'ir.actions.client',
@@ -726,14 +742,17 @@ class Plainte(models.Model):
                 rec.response_complete = True
             
                 # 2 - Log : Envoi réponse
-                self._do_log(
+                log = self._do_log(
                     plainte_id = rec.id,
                     group_sender_id = self.env.ref('mgp.mgp_gouvernance_prea').id,
                     group_receiver_id = self.env.ref('mgp.mgp_gouvernance_operateur').id,
                     action = "Envoi de réponse au BPO",
                     statut = "state_send_response_bpo",
-                    notif_sender = "Réponse envoyée au BPO",
-                    notif_receiver = "Réponse reçue du PREA")
+                    notif_sender = "Ticket n° {}, réponse envoyée au BPO".format(rec.reference),
+                    notif_receiver = "Ticket n° {}, réponse reçue du PREA".format(rec.reference))
+                
+                # 3 - Envoyer un SMS Phone au citoyen
+                status_code = self.send_sms(rec, log)
         else:
             return {
                 'type': 'ir.actions.client',
@@ -761,14 +780,17 @@ class Plainte(models.Model):
                 rec.statut = 'state_closed_prea'
             
                 # 2 - Log : Fermer le ticket
-                self._do_log(
+                log = self._do_log(
                     plainte_id = rec.id,
                     group_sender_id = self.env.ref('mgp.mgp_gouvernance_prea').id,
                     group_receiver_id = self.env.ref('mgp.mgp_gouvernance_operateur').id,
                     action = "Fermeture du ticket",
                     statut = "state_closed_prea",
-                    notif_sender = "Ticket fermé",
-                    notif_receiver = "Le ticket est fermé")
+                    notif_sender = "Ticket n° {} fermé".format(rec.reference),
+                    notif_receiver = "Ticket n° {} fermé par le PREA".format(rec.reference))
+                
+                # 3 - Envoyer un SMS Phone au citoyen
+                status_code = self.send_sms(rec, log)
         else:
             message = ''
             if (self.situation!='injoignable' or self.resultat!='satisfat'):
@@ -840,14 +862,17 @@ class Plainte(models.Model):
                 rec.response_complete = True
             
                 # 2 - Log : Envoi réponse
-                self._do_log(
+                log = self._do_log(
                     plainte_id = rec.id,
                     group_sender_id = self.env.ref('mgp.mgp_gouvernance_pmo').id,
                     group_receiver_id = self.env.ref('mgp.mgp_gouvernance_prea').id, # Traitement fini
                     action = "Envoi de réponse au PREA",
                     statut = "state_eval_response_prea",
-                    notif_sender = "Réponse envoyée au PREA",
-                    notif_receiver = "Réponse reçue du PMO")
+                    notif_sender = "Ticket n° {}, réponse envoyée au PREA".format(rec.reference),
+                    notif_receiver = "Ticket n° {}, réponse reçue du PMO".format(rec.reference))
+                
+                # 3 - Envoyer un SMS Phone au citoyen
+                status_code = self.send_sms(rec, log)
         else:
             return {
                 'type': 'ir.actions.client',
@@ -931,23 +956,188 @@ class Plainte(models.Model):
             'type':'ir.actions.act_window',
             'view_id':self.env.ref('mgp.select_pmo_form_view').id, 
             'target':'new',
-            'flags': {'initial_mode': 'edit'},  
+            'flags': {'initial_mode': 'edit'},
         }
 
     # User PMO qui traite le dossier
-    user_pmo_name = fields.Char(compute='_get_user_pmo_name')
+    user_pmo_name = fields.Char(compute='_get_user_pmo_name', default="", store=False)
     def _get_user_pmo_name(self):
+        name = ""
         for rec in self:
             if rec.user_pmo_id:
                 res = self.env['res.users'].search([('id', '=', rec.user_pmo_id.id)])
-                self.user_pmo_name = res.name
-            else:
-                self.user_pmo_name = ''
+                name = res.name
+            rec.user_pmo_name = name
 
+    # -------------------------------------------------------
+    # ---------------- Open view in mode EDIT ---------------
+    # -------------------------------------------------------
+    def open_plainte(self):
+        return {
+            'name': _('Gestion et Suivi des plaintes / ' + self.reference),
+            'type': 'ir.actions.act_window',
+            'view_type': 'form',
+            'view_id': self.env.ref('mgp.plainte_prea_form_view').id,
+            'view_mode': 'form',
+            'res_model': 'mgp.plainte',
+            'res_id': self.id,
+            'target': 'self',
+            'flags': {'form': {'action_buttons': True, 'options': {'mode': 'readonly'}}},
+        }
+        
+    # -------------------------------------------------------
+    # --------------- Gestion de MAIL personna --------------
+    # -------------------------------------------------------
+    def _get_emails_to(self, group_name):
+        """
+        Renvoie la liste des emails d'un group donnée
+        """
+        user_group = self.env.ref(group_name)
+        email_list = [usr.partner_id.email for usr in user_group.users if usr.partner_id.email]
+        return email_list
+
+    def _get_body_prea(self):
+        """
+        Renvoie le body templaté pour PREA
+        """
+        self.env.cr.execute("""
+            SELECT statut, count(statut)
+            FROM public.mgp_plainte
+            Where statut in ('state_validate_prea', 'state_eval_response_prea', 'state_done_bpo')
+            Group By statut
+        """)
+        res = self.env.cr.fetchall()
+
+        message = ""
+        total = 0
+        for o in res:
+            if o[0] in ('state_validate_prea',):
+                message += "- {} ticket(s) en attente de validation <br>".format(o[1])
+            if o[0] in ('state_eval_response_prea',):
+                message += "- {} ticket(s) avec réponse complète à envoyer au BPO<br>".format(o[1])
+            if o[0] in ('state_done_bpo',):
+                message += "- {} ticket(s) en attente de fermeture<br>".format(o[1])
+            total += o[1]
+
+        if total > 1:
+            tickets = "Vous aves reçu {} tickets à traiter dont".format(total)
+        else:
+            tickets = "Vous aves reçu {} ticket à traiter dont".format(total)
+
+        body = """Bonjour,
+            <p>{}:</p>
+            <p>{}</p>
+            <p>Bonne continuation</p>
+            <hr style="width:20%;text-align:left;margin-left:0">
+            <p><em>Mecanisme de Gestion des Plaintes</em></p>
+        """.format(tickets, message)
+
+        return body
+
+    def _get_body_pmo(self, user_pmo_id):
+        """
+        Renvoie le body templaté pour PMO
+        """
+        total = 0
+        self.env.cr.execute("""
+            SELECT  statut , count(statut)
+            FROM public.mgp_plainte
+            Where statut in ('state_traitement_pmo') and user_pmo_id = {}
+            Group By statut
+        """.format(user_pmo_id))
+        res = self.env.cr.fetchall()
+
+        message = ""
+        total = 0
+        for o in res:
+            message = "- {} ticket(s) en attente de réponse <br>".format(o[1])
+            total += o[1]
+
+        if total > 1:
+            tickets = "Vous aves reçu {} tickets à traiter dont".format(total)
+        else:
+            tickets = "Vous aves reçu {} ticket à traiter dont".format(total)
+
+        body = """Bonjour,
+            <p>{}:</p>
+            <p>{}</p>
+            <p>Bonne continuation</p>
+            <hr style="width:20%;text-align:left;margin-left:0">
+            <p><em>Mecanisme de Gestion des Plaintes</em></p>
+        """.format(tickets, message)
+
+        return body
+    
+    def _send_email(self, subject, email_to, body):
+        """
+        Send email without template email
+        """
+        vals = {
+            'subject': subject,
+            'body_html': body,
+            'email_from': self.env.user.company_id.email,
+            'email_to': email_to,
+            'auto_delete': False,
+        }
+        mail_id = self.env['mail.mail'].sudo().create(vals)
+        mail_id.sudo().send()
+
+    @api.model
+    def send_email_prea_job(self):
+        """
+        Send email to all users PREA periodically (per day)
+        """
+        self._send_email(
+            subject = 'MGP Notification',
+            email_to = ",".join(self._get_emails_to("mgp.mgp_gouvernance_prea")),
+            body = self._get_body_prea()
+        )
+
+    @api.model
+    def send_email_pmo_job(self):
+        """
+        Send email to each user PMO periodically (per week)
+        """
+        for email in self._get_emails_to("mgp.mgp_gouvernance_pmo"):
+            sender_id = self.env['res.users'].search([('email', 'ilike', email)], limit=1)
+            self._send_email(
+                subject = 'MGP Notification',
+                email_to = email,
+                body = self._get_body_pmo(sender_id.id)
+            )
 
     # -------------------------------------------------------
     # ------------- Gestion de SMS téléphonique -------------
     # -------------------------------------------------------
+    def send_sms(self, rec, log):
+        """
+        @rec: plainte object
+        @log: log object
+        """
+        status_code = 400
+        if rec:
+            # 1 - get message // and sms must be validated from parameters
+            sms = self.env['mgp.plainte_sms'].search([('statut','=', rec.statut), ('langue','=', rec.langue), ('is_valid','=', True)], limit=1)
+            
+            # 2- Send sms
+            if sms:
+                pass
+                # status_code = self.send_sms_via_orange(address=rec.tel, senderAddress="324458705", message=sms.message)
+
+            # 3- Save Sms in plainte_log
+            log = self.env['mgp.plainte_log'].search([('id','=', log.id)], limit=1)
+            if log and sms:
+                log.sms = sms.message.replace("{reference}", rec.reference) # Find {reference} in the record and replace it
+                if 200 >= status_code <= 299:
+                    log.sms_sent = True
+                else:
+                    log.sms_sent = False
+                log.write({'sms': log.sms , 'sms_sent': log.sms_sent})
+
+        print(status_code)
+
+        return status_code
+    
     """
     curl -X POST -H "Authorization: Bearer XbwTrHQeljjEhTOVhXS2yVJFwH3G" -H "Content-Type: application/json" 
     -d '{"outboundSMSMessageRequest":{"address": "tel:+261349477494", 
@@ -972,66 +1162,4 @@ class Plainte(models.Model):
 
         response = requests.post('https://api.orange.com/smsmessaging/v1/outbound/tel%3A%2B261{}/requests'.format(senderAddress), headers=headers, data=data)
 
-        print('-----------------')
-        print(response.status_code)
         return response.status_code
-
-        # Paramétrer le sms à envoyer
-        # Sauvegarder le sms envoyé
-
-
-    # -------------------------------------------------------
-    # --------------- Gestion de MAIL personna --------------
-    # -------------------------------------------------------
-    def _send_email(self, user_id):
-        temp = self.env.ref('mgp.mgp_email_template')
-        if temp:
-            # example: user - instance of res.users
-            temp.sudo().with_context().send_mail(user_id, force_send=True)
-
-    @api.model
-    def send_email_prea_job(self):
-        print("Sending email to RPEA users at {}".format(datetime.now().strftime("%d/%m/%Y, %H:%M:%S")))
-        self.env.cr.execute("SELECT uid FROM res_groups_users_rel WHERE gid = {}".format(self.env.ref( "mgp.mgp_gouvernance_prea" ).id))
-        users_pmo_ids = self.env.cr.fetchall()
-        
-        for user_id in users_pmo_ids:
-            self._send_email(user_id[0])
-
-    @api.model
-    def send_email_pmo_job(self):
-        print("Sending email to RMO users at {}".format(datetime.now().strftime("%d/%m/%Y, %H:%M:%S")))
-        self.env.cr.execute("SELECT uid FROM res_groups_users_rel WHERE gid = {}".format(self.env.ref( "mgp.mgp_gouvernance_pmo" ).id))
-        users_pmo_ids = self.env.cr.fetchall()
-        
-        for user_id in users_pmo_ids:
-            self._send_email(user_id[0])
-
-
-    # -------------------------------------------------------
-    # --------------- Controle CRUD with status -------------
-    # -------------------------------------------------------
-    x_css = fields.Html(
-        string='CSS',
-        sanitize=False,
-        compute='_compute_css',
-        store=False,
-    )
-    #@api.depends('statut')
-    def _compute_css(self):
-        for res in self:
-            res.x_css = '<style>.o_form_button_edit {display: none !important;}</style>'
-            # if res.statut in ('state_validate_prea', 'state_eval_response_prea', 'state_invalid'):
-            #     print(res.statut)
-            #     res.x_css = '<style>.o_form_button_edit {display: none !important;}</style>'
-            # else:
-            #     res.x_css = False
-
-    # ('state', 'Créés par BPO'), # Ticket créé au BPO
-    # ('state_validate_prea', 'A valider par PREA'), # En validatiton au PREA
-    # ('state_traitement_pmo', 'A traiter par PMO'), # En traitement ched PMO
-    # ('state_eval_response_prea', 'A évaluer par PREA'), # EN évaluation chez PREA
-    # ('state_send_response_bpo', 'A traiter par BPO'), # Donner la réponse au citoyen par BPO
-    # ('state_done_bpo', 'Tickets traités'), # Le traitment du ticket est terminé
-    # ('state_invalid', 'Invalides'), # Ticket invalide par le PREA (non exploitable)
-    # ('state_closed_prea', 'Fermés'), #
