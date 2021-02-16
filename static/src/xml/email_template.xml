@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <data noupdate="1">
+    <data noupdate="0">
         <record id="mgp_email_template" model="mail.template">
           <field name="name">MGP e-mail template</field>
           <field name="email_from">${object.company_id and object.company_id.email or ''}</field>
@@ -11,10 +11,15 @@
           <field name="auto_delete" eval="True"/>
           <field name="body_html">
               <![CDATA[
-                <p>Madame/Monsieur ${(object.reference)},<br/><br/>
-                Vous avez des tickets à traiter: <br/></p>
-                Cordialement,<br/>
-                ${(object.company_id.name)}
+                <p>Bonjour,<p/>
+                <p>Vous avez ${ctx['ticket_count']} ticket(s) à traiter:</p>
+                
+                <p>${ctx['ticket_items']}</p>
+                
+                <p>Cordialement,</p>
+                <span style='color:#4C4C4C'>___________________________________</span>
+                <strong>M</strong>écanisme de <strong>G</strong>estion de <strong>P</strong>laintes
+                <strong>${ctx['company_name']}</strong>
               ]]>
           </field>
        </record>

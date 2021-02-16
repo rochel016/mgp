@@ -1,33 +1,34 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <!-- MENU ROOT: seul BPO et PREA accedent à ce root menu-->
-    <menuitem id="root_menu" name="MGP" sequence="0"/>
+    <menuitem id="root_menu" name="MGP" sequence="3" web_icon="mgp,static/description/icon.png"/>
 
     <!-- MENU VERTICAL -->
-    <menuitem id="plainte_sub_menu" parent="root_menu" name="Plaintes" sequence="1" />
+    <menuitem id="plainte_sub_menu" parent="root_menu" name="Plaintes" sequence="31"/>
 
     <!-- MENU PLAINTE PMO: seul BPO  accede à ce menu-->
     <menuitem id="plainte_bpo_menu" parent="root_menu" name="Création des plaintes" action="plainte_bpo_action_window"
-        groups="mgp.mgp_gouvernance_operateur" sequence="2"/>
+        groups="mgp.mgp_gouvernance_operateur" sequence="32"/>
 
     <!-- MENU PLAINTE PMO: seul PREA  accede à ce menu-->
     <menuitem id="plainte_prea_menu" parent="root_menu" name="Gestion des plaintes" action="plainte_prea_action_window"
-        groups="mgp.mgp_gouvernance_prea" sequence="3"/>
+        groups="mgp.mgp_gouvernance_prea" sequence="33"/>
 
     <!-- MENU PLAINTE PMO: seul PMO  accede à ce menu-->
     <menuitem id="plainte_pmo_menu" parent="root_menu" name="Traitement des plaintes" action="plainte_pmo_action_window"
-        groups="mgp.mgp_gouvernance_pmo" sequence="4"/>
+        groups="mgp.mgp_gouvernance_pmo" sequence="34"/>
     
     <!-- MENU PARAMETRE PLAINTE-->
-    <menuitem id="param_plainte_sub_menu" parent="root_menu" name="Paramétrage plainte" sequence="5"
+    <menuitem id="param_plainte_sub_menu" parent="root_menu" name="Paramétrage plainte" sequence="35"
         groups="mgp.mgp_gouvernance_prea"/>
     <menuitem id="categorie_menu" parent="param_plainte_sub_menu" action="categorie_action_window"/>
     <menuitem id="categorie_details_menu" parent="param_plainte_sub_menu" action="categorie_details_action_window"/>
     <menuitem id="composante_menu" parent="param_plainte_sub_menu" action="composante_action_window"/>
     <menuitem id="sms_menu" parent="param_plainte_sub_menu" action="sms_action_window"/>
+    <menuitem id="menu_reporting_prea_resume" parent="param_plainte_sub_menu" action="custom_dashboard_action" /> <!--Paramètre dashboard-->
 
     <!-- MENU LOCALISATION -->
-    <menuitem id="province_sub_menu" parent="root_menu" name="Paramétrage localisation" sequence="6"
+    <menuitem id="province_sub_menu" parent="root_menu" name="Paramétrage localisation" sequence="36"
         groups="mgp.mgp_gouvernance_prea"/>
     <menuitem id="province_menu" parent="province_sub_menu" action="province_action_window"/>
     <menuitem id="region_menu" parent="province_sub_menu" action="region_action_window"/>
@@ -36,7 +37,7 @@
     <menuitem id="fokontany_menu" parent="province_sub_menu" action="fokontany_action_window"/>
 
     <!-- MENU CITOYEN -->
-    <menuitem id="citoyen_sub_menu" parent="root_menu" name="Paramétrage citoyen" sequence="7"
+    <menuitem id="citoyen_sub_menu" parent="root_menu" name="Paramétrage citoyen" sequence="37"
         groups="mgp.mgp_gouvernance_prea"/>
     <menuitem id="education_menu" parent="citoyen_sub_menu" action="education_action_window"/>
     <menuitem id="tranche_age_menu" parent="citoyen_sub_menu" action="tranche_action_window"/>
@@ -44,19 +45,29 @@
     <!--DASHBOARD-->
     <!--PREA-->
     <menuitem
-        id="menu_dashboard_prea"
-        name="Tableaux de bord"
+        id="menu_reporting_prea"
+        name="Reportings"
         parent="root_menu"
-        action="prea_plainte_dashboard"
-        sequence="10"
+        sequence="50"
         groups="mgp.mgp_gouvernance_prea"/> 
+
+    <menuitem
+        id="menu_reporting_prea_situation"
+        name="Situations"
+        parent="menu_reporting_prea"
+        action="prea_plainte_dashboard"
+        sequence="51"
+        groups="mgp.mgp_gouvernance_prea"/>
+    
+    
     
     <!--PMO-->
-    <menuitem
+    <!-- <menuitem
         id="menu_dashboard_pmo"
-        name="Tableaux de bord"
+        name="Situations"
         parent="root_menu"
         action="pmo_plainte_dashboard"
-        sequence="11" 
-        groups="mgp.mgp_gouvernance_pmo"/> 
+        sequence="60" 
+        groups="mgp.mgp_gouvernance_pmo"/>  -->
+
 </odoo>

@@ -23,6 +23,9 @@ class Sms(models.Model):
 
     message = fields.Char(string='Message', required=True)
 
+    # Si le message est validé alors on peut l'envoyer
+    is_valid = fields.Boolean(default=True, string="Message validé")
+
     # -------------------------------------------------------
     # -------------- Contrainte d'integrité -----------------
     # -------------------------------------------------------

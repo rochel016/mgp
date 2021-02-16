@@ -1,5 +1,4 @@
 <odoo>
-
   <!-- explicit sequence reference -->
   <data noupdate="1">
     <record id="seq_name_occ" model="ir.sequence">
@@ -133,12 +132,12 @@
             </button>
 
             <!-- Situation -->
-            <button name="get_situation" type="object" class="oe_stat_button" icon="fa-phone text-success" style="width: 100px"
+            <button name="get_situation" type="object" class="oe_stat_button" icon="fa-phone text-success" style="width: 12na0px"
               attrs="{'invisible': [('situation', '!=', 'joignable')]}">
               <field name="situation_display" widget="statinfo"/>
             </button>
 
-            <button name="get_situation" type="object" class="oe_stat_button" icon="fa-phone text-warning" style="width: 100px"
+            <button name="get_situation" type="object" class="oe_stat_button" icon="fa-phone text-warning" style="width: 120px"
               attrs="{'invisible': [('situation', '!=', 'injoignable')]}">
               <field name="situation_display" widget="statinfo"/>
             </button>
@@ -221,10 +220,10 @@
               <!--Si avoir droit de modifier la situation ainsi que le résultat-->
               <field name="check_write_resultat_situation" invisible="1" />
 
-              <field name="date_appel" 
+              <field name="date_appel" autocomplete="off"
                 attrs="{'readonly':['|', ('check_write', '=', True), ('statut', '!=', 'state')]}"/>
 
-              <field name="date_event" 
+              <field name="date_event" autocomplete="off"
                 attrs="{'readonly':['|', ('check_write', '=', True), ('statut', '!=', 'state')]}"/>
 
               <field name="genre" placeholder="Seléctionner le genre" 
@@ -244,7 +243,7 @@
 
             <group>
               <field name="tel" placeholder="Champs téléphone multiple séparé par point virgule" style="color:Blue;" 
-               attrs="{'readonly':[('statut', '!=', 'state')]}"/>
+               attrs="{'readonly':[('statut', '!=', 'state')]}" autocomplete="off"/>
 
               <field name="region_id" placeholder="Seléctionner la région"
                 options="{'no_create_edit': True, 'no_create': True, 'no_open': True}" 
@@ -323,11 +322,11 @@
             </page>
           </notebook>
         </sheet>
-        <!-- <div class="oe_chatter">
+        <div class="oe_chatter">
           <field name="message_follower_ids" widget="mail_followers"/>
-          <field name="activity_ids" widget="mail_activity"/>
+          <!-- <field name="activity_ids" widget="mail_activity"/> -->
           <field name="message_ids" widget="mail_thread"/>
-        </div> -->
+        </div>
       </form>
     </field>
   </record>
@@ -388,7 +387,7 @@
     <field name="model">mgp.plainte</field>
     <field name="arch" type="xml">
       <calendar string="Tickets" date_start="date_appel" mode="month" color="commune_id" quick_add="False"> 
-        <field name="reference"/>
+        <field name="reference" string="N°"/>
         <field name="categorie_id" options="{'no_open': True, 'no_create': True}"/>
         <field name="statut" class="text-warning"/>
         <field name="jours_traitement"/>
@@ -445,5 +444,4 @@
     <field name="view_id" ref="plainte_bpo_form_view"/>
     <field name="act_window_id" ref="plainte_bpo_action_window"/>
   </record>
-
 </odoo>

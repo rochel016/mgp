@@ -1,0 +1,17 @@
+<odoo>
+    <data noupdate="1">
+        <!--For Outgoing Mail server-->
+        <record id="out_going_mailserver_data" model="ir.mail_server">
+            <field name="name">Digital Gov Outgoing Mail Server</field>
+            <field name="sequence">10</field>
+            <field name="smtp_host">ssl0.ovh.net</field>
+            <field name="smtp_port">465</field>
+            <field name="smtp_encryption">ssl</field>
+            <field name="smtp_user">Username</field>
+            <field name="smtp_debug">True</field>
+            <field name="smtp_pass">Password</field>
+        </record>
+        
+
+    </data>
+</odoo>

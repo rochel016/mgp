@@ -95,9 +95,8 @@
           <!--Group receiver of current user ('is_last_group_receiver', '=', False) -->
           <field name="is_last_group_receiver" invisible="1" />
 
-          <!-- <button name="send_email" type="object" class="oe_highlight text-warning"
-            string="Envoyer Email TEST" 
-            statuts="state"/> -->
+          <!-- <button name="open_plainte" type="object" class="oe_highlight text-warning"
+            string="OPEN PLAINTE TEST" statuts="state"/> -->
 
          <!-- PREA actions -->
           <button name="action_cancel" type="object" class="oe_highlight" 
@@ -143,12 +142,12 @@
             </button>
 
             <!-- Situation -->
-            <button name="get_situation" type="object" class="oe_stat_button" icon="fa-phone text-success" style="width: 100px"
+            <button name="get_situation" type="object" class="oe_stat_button" icon="fa-phone text-success" style="width: 120px"
               attrs="{'invisible': [('situation', '!=', 'joignable')]}">
               <field name="situation_display" widget="statinfo"/>
             </button>
 
-            <button name="get_situation" type="object" class="oe_stat_button" icon="fa-phone text-warning" style="width: 100px"
+            <button name="get_situation" type="object" class="oe_stat_button" icon="fa-phone text-warning" style="width: 120px"
               attrs="{'invisible': [('situation', '!=', 'injoignable')]}">
               <field name="situation_display" widget="statinfo"/>
             </button>
@@ -283,7 +282,7 @@
         </sheet>
         <div class="oe_chatter">
           <field name="message_follower_ids" widget="mail_followers"/>
-          <field name="activity_ids" widget="mail_activity"/>
+          <!-- <field name="activity_ids" widget="mail_activity"/> -->
           <field name="message_ids" widget="mail_thread"/>
         </div>
       </form>

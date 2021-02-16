@@ -39,7 +39,7 @@
 
   <!-- server action to the one above -->
   <record model="ir.actions.act_window" id="sms_action_window">
-    <field name="name">Messages à envoyés aux citoyens</field>
+    <field name="name">Messages à envoyer aux citoyens</field>
     <field name="res_model">mgp.plainte_sms</field>
     <field name="view_mode">tree,form</field>
   </record>

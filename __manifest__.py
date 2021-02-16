@@ -6,14 +6,14 @@
         Le système Mécanisme de Gestion des Plaintes (MGP) permet de gérer les plaintes et doléances des émetteurs (citoyens),
         de façon accessible et pérenne.
     """,
-    'author': "EGM",
+    #'category': '',
+    'author': "UGD",
     'license': "AGPL-3", 
     'website': "https://digital.gov.mg/",
-    # 'category': 'Gouvernance',
-    'version': '0.0.0 - Beta 4',
+    'version': '0.5.0 Beta',
     'depends': ['base', 'mail', 'board'],
     'qweb': [
-        'static/src/xml/icon_systray.xml'],
+        'static/src/xml/icon_systray.xml',], #'static/src/xml/login.xml'
     'data': [
         # Security
         "security/security.xml",
@@ -36,6 +36,7 @@
         "views/plainte/categorie_details_view.xml",
         "views/plainte/composante_view.xml",
         "views/plainte/sms_view.xml",
+        "views/plainte/custom_dashboard.xml",
 
          # Paramétrage des citoyens
         "views/citoyen/education_view.xml",
@@ -49,7 +50,7 @@
         "views/localisation/fokontany_view.xml",
 
         # template EMAIL
-        "static/src/xml/mail_template.xml",
+        "static/src/xml/email_server.xml",
 
         #Tableau de bord
         "views/dashboard/dashboard_prea.xml",
@@ -59,9 +60,14 @@
         'static/src/xml/menu.xml',
 
         # Reports
-        "reports/ticket_view.xml",
-        "reports/report.xml",
+        #"reports/ticket_view.xml",
+        #"reports/report.xml",
+
+        # Langue
+        # "static/src/xml/i18n.xml",
     ],
     
+    'installable': True,
     'application': True,
+    'auto_install': False,
 }
