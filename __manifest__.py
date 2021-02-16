@@ -10,7 +10,7 @@
     'author': "UGD",
     'license': "AGPL-3", 
     'website': "https://digital.gov.mg/",
-    'version': '0.5.0 Beta',
+    'version': '0.6.0 Beta',
     'depends': ['base', 'mail', 'board'],
     'qweb': [
         'static/src/xml/icon_systray.xml',], #'static/src/xml/login.xml'
