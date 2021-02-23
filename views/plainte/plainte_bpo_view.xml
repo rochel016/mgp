@@ -396,11 +396,37 @@
     </field>
   </record>
 
+  <!-- View Graph -->
+  <record id="plainte_bpo_graph_view" model="ir.ui.view">
+    <field name="name">plainte.graph.view</field>
+    <field name="model">mgp.plainte</field>
+    <field name="arch" type="xml">
+      <graph string="Par statut" type="pie"> <!--line, pie stacked="True"-->
+        <field name="categorie_id"/>
+        <field name="statut" type="row"/>    <!--row-->
+      </graph>
+    </field>
+  </record>
+
+  <!-- View Pivot -->
+  <record id="plainte_bpo_pivot_view" model="ir.ui.view">
+    <field name="name">plainte.pivot.view</field>
+    <field name="model">mgp.plainte</field>
+    <field name="arch" type="xml">
+      <pivot string="Par statut">
+        <field name="education_id" type="col"/>
+        <field name="genre" type="col"/>
+        <field name="statut" type="col"/>
+        <field name="categorie_id" type="row"/>
+      </pivot>
+    </field>
+  </record>
+
   <!-- server action to the one above -->
   <record id="plainte_bpo_action_window" model="ir.actions.act_window">
     <field name="name">Gestion et Suivi des plaintes</field>
     <field name="res_model">mgp.plainte</field>
-    <field name="view_mode">kanban,tree,calendar,form</field>
+    <field name="view_mode">kanban,tree,calendar,form,graph,pivot</field>
     <field name="search_view_id" ref="plainte_bpo_search_view"/>
     <field name="domain">[('statut','in',['state', 'state_send_response_bpo', 'state_done_bpo']) ]</field>
     <field name="help" type="html">
@@ -442,6 +468,22 @@
     <field eval="4" name="sequence"/>
     <field name="view_mode">form</field>
     <field name="view_id" ref="plainte_bpo_form_view"/>
+    <field name="act_window_id" ref="plainte_bpo_action_window"/>
+  </record>
+
+  <!-- My Specific Form: plainte_bpo_graph_view -->
+  <record model="ir.actions.act_window.view" id="bpo_action_window_graph">
+    <field eval="5" name="sequence"/>
+    <field name="view_mode">graph</field>
+    <field name="view_id" ref="plainte_bpo_graph_view"/>
+    <field name="act_window_id" ref="plainte_bpo_action_window"/>
+  </record>
+
+  <!-- My Specific Form: plainte_bpo_pivot_view -->
+  <record model="ir.actions.act_window.view" id="bpo_action_window_pivot">
+    <field eval="6" name="sequence"/>
+    <field name="view_mode">pivot</field>
+    <field name="view_id" ref="plainte_bpo_pivot_view"/>
     <field name="act_window_id" ref="plainte_bpo_action_window"/>
   </record>
 </odoo>
