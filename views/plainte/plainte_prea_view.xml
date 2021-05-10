@@ -32,7 +32,6 @@
         <field name="reference" string="Ticket n°"/>
         <field name="date_appel"/>
         <field name="date_event"/>
-        <field name='district_id.name' domain="[('district_id', 'parent_of', 'commune_id ')]"/>
         <field name="commune_id"/>
         <field name="fokontany_id"/>
         <field name="genre"/>
