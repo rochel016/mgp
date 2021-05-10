@@ -45,16 +45,16 @@
     <!--DASHBOARD-->
     <!--PREA-->
     <menuitem
-        id="menu_reporting_prea"
-        name="Reportings"
+        id="menu_dashboard_prea"
+        name="Analyse"
         parent="root_menu"
         sequence="50"
         groups="mgp.mgp_gouvernance_prea"/> 
 
     <menuitem
         id="menu_reporting_prea_situation"
-        name="Situations"
-        parent="menu_reporting_prea"
+        name="Situations en cours"
+        parent="menu_dashboard_prea"
         action="prea_plainte_dashboard"
         sequence="51"
         groups="mgp.mgp_gouvernance_prea"/>
@@ -62,12 +62,12 @@
     
     
     <!--PMO-->
-    <!-- <menuitem
+    <menuitem
         id="menu_dashboard_pmo"
         name="Situations"
         parent="root_menu"
         action="pmo_plainte_dashboard"
         sequence="60" 
-        groups="mgp.mgp_gouvernance_pmo"/>  -->
+        groups="mgp.mgp_gouvernance_pmo"/> 
 
 </odoo>

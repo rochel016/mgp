@@ -91,7 +91,7 @@
             statuts="state_send_response_bpo"
             attrs="{'invisible': ['|', ('statut', '!=', 'state_send_response_bpo'), ('situation', 'in', ['joignable', 'injoignable'])]}"/>
           
-          <button name="action_injoignable" type="object" class="oe_highlight"
+          <button name="action_injoignable" type="object" class="btn btn-danger"
             string="Injoignable" 
             confirm="Voulez vous informer le PREA que le citoyen est injoignable ?"
             statuts="state_send_response_bpo"
@@ -200,6 +200,21 @@
             </button>
           </div>
 
+          <!--RIBBON du ticket nouveau-->
+          <widget name="web_ribbon" text="NOUVEAU" attrs="{'invisible': [('statut', '!=', 'state')]}" bg_color="bg-dark"/>
+
+          <!--RIBBON du ticket invalide-->
+          <widget name="web_ribbon" text="INVALIDE" attrs="{'invisible': [('statut', '!=', 'state_invalid')]}" bg_color="bg-danger"/>
+
+          <!--RIBBON du ticket traité au niveau bpo-->
+          <widget name="web_ribbon" text="TRAITÉ" attrs="{'invisible': [('statut', '!=', 'state_done_bpo')]}" bg_color="bg-success"/>
+
+          <!--RIBBON du ticket fermé-->
+          <widget name="web_ribbon" text="FERMÉ" attrs="{'invisible': [('statut', '!=', 'state_closed_prea')]}" bg_color="bg-primary"/>
+
+          <!--RIBBON du ticket en cours de traitement-->
+          <widget name="web_ribbon" text="EN COURS" attrs="{'invisible': [('statut', 'in', ['state', 'state_closed_prea', 'state_done_bpo', 'state_invalid'])]}" bg_color="bg-warning"/>
+          
           <!-- Title -->
           <div class="oe_title" position="before">
             <span class="mgp_label" attrs="{'invisible': [('is_last_group_receiver', '!=', True)]}" icon="fa-group" />  
@@ -272,8 +287,8 @@
                 options="{'no_create_edit': True, 'no_create': True, 'no_open': True}"
                 attrs="{'readonly':['|', ('check_write', '=', True), ('statut', '!=', 'state')]}"/>
 
-            <field name="ennonce" string="Plainte/Doléance" placeholder="Exposez ici l'ennoncé de la plainte"
-              attrs="{'readonly':['|', ('check_write', '=', True), ('statut', '!=', 'state')]}" height="250"/>
+            <field name="ennonce" string="Plainte/Doléance" placeholder="Exposez ici l'ennoncé de la plainte" widget="html"
+              attrs="{'readonly':['|', ('check_write', '=', True), ('statut', '!=', 'state')]}" height="100"/>
           </group>
 
           <notebook>
@@ -304,7 +319,7 @@
               <field name="reponse_ids" context="{'default_plainte_id':active_id}" widget="one2many_list">
                 <tree editable="bottom">
                   <field name="plainte_id" invisible="1" />
-                  <field name="reponse" />
+                  <field name="reponse" class="field_value_color" />
                 </tree>
               </field>
             </page>
@@ -352,7 +367,7 @@
 
         <templates>
           <t t-name="kanban-box">
-            <div class="oe_kanban_global_click mgp_kanban_tasks_ext">
+            <div class="oe_kanban_global_click mgp_kanban_tasks_ext" style="background-color: #EAF7F3;">
               <t t-if="record.genre.raw_value=='masculin'">
                 <img class="o_kanban_image" alt="profile_male" t-att-src='_s + "/mgp/static/src/img/profile_male.png"' width="24"/>  
               </t>
@@ -361,15 +376,43 @@
               </t>
               <div class="oe_kanban_details"> 
                 <div class="o_kanban_tags_section"/>
-                <strong><field name="reference"/></strong><em groups="mgp.mgp_gouvernance_operateur" class="mgp_tel_label"> <field name="tel"/></em> 
+
+                <t t-if="record.user_pmo_name.raw_value">
+                  <strong class="space_right"><field name="reference"/></strong>- <div class="kanban-ribbon-pmo"><p><field name="user_pmo_name"/></p></div>
+                </t>
+                <t t-else="">
+                  <strong><field name="reference"/></strong>
+                </t>
+                
                 <ul>
-                  <li><span class="mgp_label">Appel: </span><field name="date_appel"/></li>
-                  <li><span class="mgp_label">Zone: </span><field name="zone"/></li>
-                  <li attrs="{'invisible': [('response_complete', '=', False)]}">
-                    <span class="mgp_label">Réponse: </span><strong class="text-success">Complète</strong>
-                  </li>
-                  <li attrs="{'invisible': [('is_reprocessed', '=', False)]}">
-                    <strong class="mgp_label text-warning">En retraitement</strong>
+                  <li><span class="mgp_tel_label fa fa-phone"></span><field name="tel"/></li>
+                  <li><span class="mgp_label fa fa-clock-o"></span><field name="date_appel"/></li>
+                  <li><span class="mgp_label fa fa-map-marker"></span><field name="district_id"/></li>
+                  <li>
+                    <t t-if="record.statut.raw_value=='state_done_bpo'">
+                      <div class="ribbon-success"><p>Traité</p></div>
+                    </t>
+                    <t t-elif="record.statut.raw_value=='state_closed_prea'">
+                      <div class="ribbon-secondary"><p>Fermé</p></div>
+                    </t>
+                    <t t-elif="record.statut.raw_value=='state_invalid'">
+                      <div class="ribbon-danger"><p>Invalide</p></div>
+                    </t>
+                    <t t-elif="record.response_complete.raw_value">
+                      <div class="ribbon-info"><p>Réponse complète</p></div>
+                      <div class="ribbon-warning"><p>En cours</p></div>
+                    </t>
+                    <t t-elif="record.statut.raw_value!='state'">
+                      <t t-if="record.is_reprocessed.raw_value">
+                        <div class="ribbon-warning"><p>En retraitement</p></div>
+                      </t>
+                      <t t-else="">
+                        <div class="ribbon-warning"><p>En cours</p></div>
+                      </t>
+                    </t>
+                    <t t-elif="record.statut.raw_value=='state'">
+                      <div class="ribbon-dark"><p>Nouveau</p></div>
+                    </t>
                   </li>
                 </ul>
               </div>
@@ -396,11 +439,37 @@
     </field>
   </record>
 
+  <!-- View Graph -->
+  <record id="plainte_bpo_graph_view" model="ir.ui.view">
+    <field name="name">plainte.graph.view</field>
+    <field name="model">mgp.plainte</field>
+    <field name="arch" type="xml">
+      <graph string="Par statut" type="pie"> <!--line, pie stacked="True"-->
+        <field name="categorie_id"/>
+        <field name="statut" type="row"/>    <!--row-->
+      </graph>
+    </field>
+  </record>
+
+  <!-- View Pivot -->
+  <record id="plainte_bpo_pivot_view" model="ir.ui.view">
+    <field name="name">plainte.pivot.view</field>
+    <field name="model">mgp.plainte</field>
+    <field name="arch" type="xml">
+      <pivot string="Par statut">
+        <field name="education_id" type="col"/>
+        <field name="genre" type="col"/>
+        <field name="statut" type="col"/>
+        <field name="categorie_id" type="row"/>
+      </pivot>
+    </field>
+  </record>
+
   <!-- server action to the one above -->
   <record id="plainte_bpo_action_window" model="ir.actions.act_window">
     <field name="name">Gestion et Suivi des plaintes</field>
     <field name="res_model">mgp.plainte</field>
-    <field name="view_mode">kanban,tree,calendar,form</field>
+    <field name="view_mode">kanban,tree,calendar,form,graph,pivot</field>
     <field name="search_view_id" ref="plainte_bpo_search_view"/>
     <field name="domain">[('statut','in',['state', 'state_send_response_bpo', 'state_done_bpo']) ]</field>
     <field name="help" type="html">
@@ -442,6 +511,22 @@
     <field eval="4" name="sequence"/>
     <field name="view_mode">form</field>
     <field name="view_id" ref="plainte_bpo_form_view"/>
+    <field name="act_window_id" ref="plainte_bpo_action_window"/>
+  </record>
+
+  <!-- My Specific Form: plainte_bpo_graph_view -->
+  <record model="ir.actions.act_window.view" id="bpo_action_window_graph">
+    <field eval="5" name="sequence"/>
+    <field name="view_mode">graph</field>
+    <field name="view_id" ref="plainte_bpo_graph_view"/>
+    <field name="act_window_id" ref="plainte_bpo_action_window"/>
+  </record>
+
+  <!-- My Specific Form: plainte_bpo_pivot_view -->
+  <record model="ir.actions.act_window.view" id="bpo_action_window_pivot">
+    <field eval="6" name="sequence"/>
+    <field name="view_mode">pivot</field>
+    <field name="view_id" ref="plainte_bpo_pivot_view"/>
     <field name="act_window_id" ref="plainte_bpo_action_window"/>
   </record>
 </odoo>

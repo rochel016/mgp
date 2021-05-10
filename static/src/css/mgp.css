@@ -1,14 +1,19 @@
+.space_right {
+   margin-right:0.1em;
+}
+
+.space_height {
+   height:0.2em;
+}
+
 .mgp_label {
-
-    color: #5a7df1;
-
+    color: #252627;
+    margin-right:0.25em;
 }
 
 .mgp_tel_label {
-
-    color: #5ebb5e;
-    font-size: 11px;
-
+    color: #4f0c5c;
+    margin-right:0.25em;
 }
 
 .mgp_kanban_tasks_ext {
@@ -27,3 +32,115 @@
     max-height: 200px;
     overflow-y:scroll;
 } 
+
+.mgp_kanban_analyse {
+    border-radius: 5px;
+}
+
+.field_value_color {
+    color: #052EF9;
+}
+
+.radius-standard {
+    border-radius: 3px;
+ }
+
+/** RIBBON PMO NAME */
+.kanban-ribbon-pmo {
+    font-size: 12px;
+    font-weight: bold;
+    height: 15px;
+    color: #1483dd;
+    background: white !important;
+    display: inline-flex;
+ }
+
+ /** RIBBON STATUS */
+ .ribbon-success {
+    font-size: 12px;
+    height: 17px;
+    color: white !important;
+    background: #28A745; 
+    padding-left: 10px;
+    padding-right: 10px;
+    border-radius: 5px 20px 5px;
+    display: inline-flex;
+ }
+
+ .ribbon-danger {
+    font-size: 12px;
+    height: 17px;
+    color: white !important;
+    background: #DC3545; 
+    padding-left: 10px;
+    padding-right: 10px;
+    border-radius: 5px 20px 5px;
+    display: inline-flex;
+ }
+ 
+ .ribbon-primary {
+    font-size: 12px;
+    height: 17px;
+    color: white !important;
+    background: #5D8DA8; 
+    padding-left: 10px;
+    padding-right: 10px;
+    border-radius: 5px 20px 5px;
+    display: inline-flex;
+ }
+
+ .ribbon-secondary {
+    font-size: 12px;
+    height: 17px;
+    color: white !important;
+    background: #6c757d; 
+    padding-left: 10px;
+    padding-right: 10px;
+    border-radius: 5px 20px 5px;
+    display: inline-flex;
+ }
+ 
+ .ribbon-info {
+    font-size: 12px;
+    height: 17px;
+    color: white !important;
+    background: #17A2B8; 
+    padding-left: 10px;
+    padding-right: 10px;
+    border-radius: 5px 20px 5px;
+    display: inline-flex;
+ }
+
+ .ribbon-warning {
+    font-size: 12px;
+    height: 17px;
+    color: white !important;
+    background: #FFC107; 
+    padding-left: 10px;
+    padding-right: 10px;
+    border-radius: 5px 20px 5px;
+    display: inline-flex;
+ }
+ 
+ .ribbon-dark {
+    font-size: 12px;
+    height: 15px;
+    color: white !important;
+    background: #262626; 
+    padding-left: 10px;
+    padding-right: 10px;
+    border-radius: 5px 20px 5px;
+    display: inline-flex;
+ }
+ 
+ .ribbon-light {
+    font-size: 12px;
+    height: 15px;
+    color: rgb(8, 8, 8) !important;
+    background: #FBFBFB; 
+    padding-left: 10px;
+    padding-right: 10px;
+    padding-bottom: 5px;
+    border-radius: 5px 20px 5px;
+    display: inline-flex;
+ }

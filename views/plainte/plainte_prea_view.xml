@@ -32,6 +32,7 @@
         <field name="reference" string="Ticket n°"/>
         <field name="date_appel"/>
         <field name="date_event"/>
+        <field name='district_id.name' domain="[('district_id', 'parent_of', 'commune_id ')]"/>
         <field name="commune_id"/>
         <field name="fokontany_id"/>
         <field name="genre"/>
@@ -95,15 +96,22 @@
           <!--Group receiver of current user ('is_last_group_receiver', '=', False) -->
           <field name="is_last_group_receiver" invisible="1" />
 
-          <!-- <button name="open_plainte" type="object" class="oe_highlight text-warning"
-            string="OPEN PLAINTE TEST" statuts="state"/> -->
+          <!-- <button name="get_company_phone" type="object" class="oe_highlight text-warning"
+            string="COMPANY INFO" statuts="state"/> -->
 
-         <!-- PREA actions -->
-          <button name="action_cancel" type="object" class="oe_highlight" 
+          <!--RENVOYER LE TICKET AU BPO POUR CAUSE DE MAUVAISE INFO FOURNIR-->
+          <button name="action_return_ticket_to_bpo" type="object" class="btn btn-warning"
+            string="Renvoyer ticket au BPO"
+            confirm="Voulez vous renvoyer ce tiket au BPO (cause: mauvaise information fournie par BPO) ?"
+            statuts="state_validate_prea"
+            attrs="{'invisible': [('statut', '!=', 'state_validate_prea')]}"/>
+
+          <!-- PREA actions -->
+          <button name="action_cancel" type="object" class="btn btn-danger" 
             string="Ticket non valide"
             confirm="Voulez vous vraiement annuler ce ticket?"
             statuts="state_invalid"
-            attrs="{'invisible': [('statut', '!=', 'state_validate_prea')]}"/>
+            attrs="{'invisible': [('statut', '!=', 'state_validate_prea')]}"/>          
 
           <button name="assigner_tiket_user_pmo" type="object" class="oe_highlight" 
             string="Assigner ticket à un PMO" 
@@ -113,6 +121,13 @@
           <button name="action_send_response_to_bpo" type="object" class="oe_highlight" 
             string="Envoyer réponse au BPO"
             confirm="Voulez vous envoyer la réponse au BPO?"
+            statuts="state_eval_response_prea"
+            attrs="{'invisible': [('statut', '!=', 'state_eval_response_prea')]}"/>
+
+          <!--RENVOYER LE TICKET AU PMO POUR CAUSE DE MAUVAISE RÉPONSE OU NON  COMPLETE-->
+           <button name="action_return_ticket_to_pmo" type="object" class="btn btn-warning"
+            string="Renvoyer ticket au PMO"
+            confirm="Voulez vous renvoyer ce tiket au PMO (cause: mauvaise réponse ou non complète de PMO) ?"
             statuts="state_eval_response_prea"
             attrs="{'invisible': [('statut', '!=', 'state_eval_response_prea')]}"/>
 
@@ -212,6 +227,18 @@
             </button>
           </div>
 
+          <!--RIBBON du ticket invalide-->
+          <widget name="web_ribbon" text="INVALIDE" attrs="{'invisible': [('statut', '!=', 'state_invalid')]}" bg_color="bg-danger"/>
+
+          <!--RIBBON du ticket traité au niveau bpo-->
+          <widget name="web_ribbon" text="TRAITÉ" attrs="{'invisible': [('statut', '!=', 'state_done_bpo')]}" bg_color="bg-success"/>
+
+          <!--RIBBON du ticket fermé-->
+          <widget name="web_ribbon" text="FERMÉ" attrs="{'invisible': [('statut', '!=', 'state_closed_prea')]}" bg_color="bg-info"/>
+
+          <!--RIBBON du ticket en cours de traitement-->
+          <widget name="web_ribbon" text="EN COURS" attrs="{'invisible': [('statut', 'in', ['state_closed_prea', 'state_done_bpo', 'state_invalid'])]}" bg_color="bg-warning"/>
+
           <!-- Title -->
           <div class="oe_title" position="before">
             <span class="mgp_label" attrs="{'invisible': [('is_last_group_receiver', '!=', True)]}" icon="fa-group" />  
@@ -262,7 +289,7 @@
               <field name="reponse_ids" context="{'default_plainte_id':active_id}" widget="one2many_list">
                 <tree editable="bottom">
                   <field name="plainte_id" invisible="1" />
-                  <field name="reponse" />
+                  <field name="reponse" class="field_value_color" />
                 </tree>
               </field>
             </page>
@@ -282,7 +309,6 @@
         </sheet>
         <div class="oe_chatter">
           <field name="message_follower_ids" widget="mail_followers"/>
-          <!-- <field name="activity_ids" widget="mail_activity"/> -->
           <field name="message_ids" widget="mail_thread"/>
         </div>
       </form>
@@ -301,53 +327,68 @@
         <field name="response_complete" />
         <field name="statut" />
         <field name="is_reprocessed" />
+        <field name="categorie_wrap" />
 
-        <!-- Optional progress bar -->
         <progressbar
             field="statut"
-            colors='{"state_validate_prea": "warning",
-                    "state_traitement_pmo": "info",
+            colors='{"state_validate_prea": "primary",
+                    "state_traitement_pmo": "primary",
                     "state_eval_response_prea": "primary",
-                    "state_send_response_bpo": "dark",
-                    "state_done_bpo": "success",
-                    "state_closed_prea": "muted",
-                    "state_invalid": "danger"}'/>
+                    "state_send_response_bpo": "primary",
+                    "state_done_bpo": "primary",
+                    "state_closed_prea": "primary",
+                    "state_invalid": "primary"}'/>
 
         <templates>
           <t t-name="kanban-box">
-            <div class="oe_kanban_global_click mgp_kanban_tasks_ext">
+            <div class="oe_kanban_global_click mgp_kanban_tasks_ext" style="background-color: #EAF7F3;">
               <t t-if="record.genre.raw_value=='masculin'">
-                <img class="o_kanban_image" alt="profile_male" t-att-src='_s + "/mgp/static/src/img/profile_male.png"' width="24"/>  
+                <img class="o_kanban_image radius-standard" alt="profile_male" t-att-src='_s + "/mgp/static/src/img/profile_male.png"' width="24"/>  
               </t>
               <t t-else="">
-                <img class="o_kanban_image" alt="profile_female" t-att-src='_s + "/mgp/static/src/img/profile_female.png"' width="24"/>
+                <img class="o_kanban_image radius-standard" alt="profile_female" t-att-src='_s + "/mgp/static/src/img/profile_female.png"' width="24"/>
               </t>
               <div class="oe_kanban_details"> 
                 <div class="o_kanban_tags_section" />
-                <strong><field name="reference" /></strong>
+                
+                <t t-if="record.user_pmo_name.raw_value">
+                  <strong class="space_right"><field name="reference"/></strong>- <div class="kanban-ribbon-pmo"><p><field name="user_pmo_name"/></p></div>
+                </t>
+                <t t-else="">
+                  <strong><field name="reference"/></strong>
+                </t>
+
                 <ul>
-                  <li><span class="mgp_label">Appel: </span><field name="date_appel"/></li>
-                  <li><span class="mgp_label">Zone: </span><field name="zone"/></li>
-                  <li><span class="mgp_label">Catégorie: </span><field name="categorie_id"/></li>
+                  <li><span class="mgp_label fa fa-clock-o"></span><field name="date_appel"/></li>
+                  <li><span class="mgp_label fa fa-map-marker"></span><field name="district_id"/></li>
+                  <li><span class="mgp_label fa fa-commenting"></span><field name="categorie_wrap"/></li>
                   <li>
-                    <span class="mgp_label">Attribution:</span>
-                    <t t-if="record.user_pmo_name.raw_value">
-                      <em class="text-danger"><field name="user_pmo_name"/></em>
+                    <t t-if="record.statut.raw_value=='state_done_bpo'">
+                      <div class="ribbon-success"><p>Traité</p></div>
                     </t>
-                    <t t-else="">
-                      <em class="text-danger"><field name="actual_group_name"/></em>
+                    <t t-elif="record.statut.raw_value=='state_closed_prea'">
+                      <div class="ribbon-secondary"><p>Fermé</p></div>
                     </t>
-                  </li>
-                  <li attrs="{'invisible': [('response_complete', '=', False)]}">
-                    <span class="mgp_label">Réponse: </span><strong class="text-success">Complète</strong>
-                  </li>
-                  <li attrs="{'invisible': [('is_reprocessed', '=', False)]}">
-                    <strong class="mgp_label text-warning">En retraitement</strong>
+                    <t t-elif="record.statut.raw_value=='state_invalid'">
+                      <div class="ribbon-danger"><p>Invalide</p></div>
+                    </t>
+                    <t t-elif="record.response_complete.raw_value">
+                      <div class="ribbon-info"><p>Réponse complète</p></div>
+                      <div class="space_height"></div>
+                      <div class="ribbon-warning"><p>En cours</p></div>
+                    </t>
+                    <t t-elif="record.statut.raw_value!='state'">
+                      <t t-if="record.is_reprocessed.raw_value">
+                        <div class="ribbon-warning"><p>En retraitement</p></div>
+                      </t>
+                      <t t-else="">
+                        <div class="ribbon-warning"><p>En cours</p></div>
+                      </t>
+                    </t>
                   </li>
                 </ul>
               </div>
-            </div>
-            <br/><br/>
+            </div><br/><br/>
           </t>
         </templates>
       </kanban>

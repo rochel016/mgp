@@ -81,7 +81,7 @@ class Plainte(models.Model):
 
     situation = fields.Selection([
         ('joignable', 'joignable'),
-        ('injoignable', 'injoignable'),
+        ('injoignable', 'injoignable'), # important 2021/04/29 => statu = state_invalid
     ], string="Situation.", readonly=True)
 
     resultat = fields.Selection([
@@ -145,6 +145,12 @@ class Plainte(models.Model):
     # -------------------------------------------------------
     # -------------- Champs calculé : Status Form -----------
     # -------------------------------------------------------
+    categorie_wrap = fields.Text(compute='_get_categorie_wrap')
+    def _get_categorie_wrap(self):
+        """Wrap catégorie lors de l'affichage kanban"""
+        for rec in self:
+            rec.categorie_wrap = ' '.join([s for s in rec.categorie_id.name.split(' ')[0:5]]) + ' ...'
+
     statut_display = fields.Text(string="Statut du ticket", compute='get_statut')
     def get_statut(self):
         """ Champs calculé qui renvoie le satut du ticket """
@@ -200,10 +206,17 @@ class Plainte(models.Model):
     def _get_localisation(self):
         """ Renvoie la localisation """
         for rec in self:
-            rec.zone = '{} / {}'.format(rec.region_id.name, rec.district_id.name) 
-            # rec.zone = '{} / {} / {}'.format(rec.region_id.name, rec.district_id.name, rec.commune_id.name) 
-            # if rec.fokontany_id:
-            #     rec.zone += ' / {}'.format(rec.fokontany_id.name)
+            rec.zone = '{} / {} / {}'.format(rec.region_id.name, rec.district_id.name, rec.commune_id.name) 
+            if rec.fokontany_id:
+                rec.zone += ' / {}'.format(rec.fokontany_id.name)
+
+    has_response = fields.Boolean(compute='_has_response')
+    def _has_response(self):
+        """ Renvoie True si le ticket a déjà au moins une réponse """
+        if len(self.reponse_ids) > 0:
+            self.has_response = True
+        else:
+            self.has_response = False
 
     # -------------------------------------------------------
     # ----------------- GROUP Contraintes -------------------
@@ -517,7 +530,7 @@ class Plainte(models.Model):
     def action_injoignable(self):
         """
         - User : BPO
-        - Status: 'state_done_bpo' # Ce statut est traité
+        - Status: 'state_invalid' # Ce statut est traité
         - Situation= 'injoignable'
         - Desc: Le citoyen est injoignable
         - From BPO to PREA
@@ -525,7 +538,7 @@ class Plainte(models.Model):
         if self.env.user.has_group('mgp.mgp_gouvernance_operateur'):
             for rec in self:
                 # 1 - Update ticket state
-                rec.statut = 'state_done_bpo'
+                rec.statut = 'state_invalid'
                 rec.situation = 'injoignable'
             
                 # 2 - Log : citoyen injoignable
@@ -534,7 +547,7 @@ class Plainte(models.Model):
                     group_sender_id = self.env.ref('mgp.mgp_gouvernance_operateur').id,
                     group_receiver_id = self.env.ref('mgp.mgp_gouvernance_prea').id,
                     action = "Joindre le citoyen",
-                    statut = "state_done_bpo",
+                    statut = "state_invalid",
                     notif_sender = "Ticket n° {}, citoyen injoignable".format(rec.reference),
                     notif_receiver = "Ticket n° {}, citoyen injoignable".format(rec.reference))
                 
@@ -885,6 +898,117 @@ class Plainte(models.Model):
                 },
             }
 
+    #-----------------------------------------------------------
+    #-------------------- Workflow ACTIONS PMO -----------------
+    #-----------------------------------------------------------
+    def action_return_ticket_to_prea(self):
+        """
+        - User : PMO
+        - Status: 'state_eval_response_prea'
+        - Desc: Retourner le ticket au PREA pour cause erreur de detination (mauvais pmo)
+        - From PMO to PREA
+        - Condition: Vérifier si le ticket a déjà au moins une réponse => envoyer un mesage d'erreur
+        """
+        for rec in self:
+            rep = self.env['mgp.plainte_reponse'].search([('plainte_id','=', rec.id)], limit=1)
+            if rep.id:
+                return {
+                    'type': 'ir.actions.client',
+                    'tag': 'display_notification',
+                    'params': {
+                        'title': _('Annulation/Retour du ticket'),
+                        'message': _("Erreur d'annulation! Ce ticket est en cours de traitement (voir réponse)"),
+                        'type':'warning',  
+                        'sticky': False,
+                    },
+                }
+            else:
+                # 1 - Update ticket state
+                rec.statut = 'state_validate_prea'
+            
+                # 2 - Log : Retourne/Annule le ticket
+                log = self._do_log(
+                    plainte_id = rec.id,
+                    group_sender_id = self.env.ref('mgp.mgp_gouvernance_pmo').id,
+                    group_receiver_id = self.env.ref('mgp.mgp_gouvernance_prea').id,
+                    action = "Retour du ticket aux admin PREA (mauvais destinataire)",
+                    statut = "state_validate_prea",
+                    notif_sender = "Ticket n° {} retourné au PREA".format(rec.reference),
+                    notif_receiver = "Ticket n° {} en attente de validation".format(rec.reference))
+                
+                # 3 - Envoyer message de reussite
+                # return {
+                #     'type': 'ir.actions.client',
+                #     'tag': 'display_notification',
+                #     'params': {
+                #         'title': _('Annulation/Retour du ticket'),
+                #         'message': _("Ticket n° {} retourné au PREA".format(rec.reference)),
+                #         'type':'success',  
+                #         'sticky': False,
+                #     },
+                # }
+                    
+    #-----------------------------------------------------------
+    #-------------------- Workflow ACTIONS PREA -----------------
+    #-----------------------------------------------------------
+    def action_return_ticket_to_bpo(self):
+        """
+        - User : PREA
+        - Status: 'state'
+        - Desc: Le PREA retourne le ticket vers BPO => Mauvaises infos fournies par BPO. 
+        - From PREA to BPO
+        - Condition: Vérifier si le ticket n'est pas encore attribué à un PMO 
+        """
+        for rec in self:
+            if not rec.user_pmo_id.id:
+                # # 1 - Update ticket state
+                rec.statut = 'state'
+                
+                # 2 - Log : Envoi réponse
+                log = self._do_log(
+                    plainte_id = rec.id,
+                    group_sender_id = self.env.ref('mgp.mgp_gouvernance_prea').id,
+                    group_receiver_id = self.env.ref('mgp.mgp_gouvernance_operateur').id,
+                    action = "Renvoi du ticket au BPO (cause: mauvaise information fournie)",
+                    statut = "state",
+                    notif_sender = "Ticket n° {} renvoyé au BPO".format(rec.reference),
+                    notif_receiver = "Ticket n° {} reçu du PREA".format(rec.reference))
+
+    def action_return_ticket_to_pmo(self):
+        """
+        - User : PREA
+        - Status: 'state_traitement_pmo'
+        - Desc: Le PREA retourne le ticket vers PMO => Mauvaise réponse du PMO, non validée par PREA. 
+        - From PREA to PMO
+        - Condition: Vérifier si le ticket a déjà des réponses et response_complete = True
+        """
+        for rec in self:
+            rep = self.env['mgp.plainte_reponse'].search([('plainte_id','=', rec.id)], limit=1)
+            if rep.id and rec.response_complete and rec.user_pmo_id.id:
+                # # 1 - Update ticket state
+                rec.statut = 'state_traitement_pmo'
+                rec.response_complete = False # Forcer la réponse complète à faux
+            
+                # 2 - Log : Envoi réponse
+                log = self._do_log(
+                    plainte_id = rec.id,
+                    group_sender_id = self.env.ref('mgp.mgp_gouvernance_prea').id,
+                    group_receiver_id = self.env.ref('mgp.mgp_gouvernance_pmo').id,
+                    action = "Renvoi du ticket au PMO ({}) (cause: mauvaise réponse)".format(rec.user_pmo_id.name),
+                    statut = "state_traitement_pmo",
+                    notif_sender = "Ticket n° {} renvoyé au PMO".format(rec.reference),
+                    notif_receiver = "Ticket n° {} reçu du PREA".format(rec.reference))
+
+                # return {
+                #     'type': 'ir.actions.client',
+                #     'tag': 'display_notification',
+                #     'params': {
+                #         'title': _('Renvoi du ticket au PMO'),
+                #         'message': _("Ticket n° {} renvoyé au PMO (cause: mauvaise réponse)".format(rec.reference)),
+                #         'sticky': False,
+                #     },
+                # }
+
     # -------------------------------------------------------
     # ---------------------- User : Group -------------------
     # -------------------------------------------------------
@@ -1109,57 +1233,86 @@ class Plainte(models.Model):
     # -------------------------------------------------------
     # ------------- Gestion de SMS téléphonique -------------
     # -------------------------------------------------------
+    def get_company_phone(self):
+        """
+        Le numéro de phone de la compagnie est le numéro d'envoi de message
+        Renvoie le numéro ou False
+        """
+        return self.env.user.company_id.phone
+    
+    def get_user_id(self):
+        return self.env.user.id
+
     def send_sms(self, rec, log):
         """
         @rec: plainte object
         @log: log object
         """
         status_code = 400
+        sms_tmps = ""
+        
+        sender = self.get_company_phone()
+        if not sender:
+            print("Le numéro enregistré avec votre API n'est pas défini. Veuillez entrer le numéro de votre société ex: +261...")
+
         if rec:
             # 1 - get message // and sms must be validated from parameters
             sms = self.env['mgp.plainte_sms'].search([('statut','=', rec.statut), ('langue','=', rec.langue), ('is_valid','=', True)], limit=1)
             
             # 2- Send sms
             if sms:
-                pass
-                # status_code = self.send_sms_via_orange(address=rec.tel, senderAddress="324458705", message=sms.message)
+                sms_tmps = sms.message.replace("{reference}", rec.reference) # Find {reference} in the record and replace it
+                status_code = self.send_sms_via_orange(address=rec.tel, senderAddress=sender, message=sms_tmps)
 
             # 3- Save Sms in plainte_log
             log = self.env['mgp.plainte_log'].search([('id','=', log.id)], limit=1)
             if log and sms:
-                log.sms = sms.message.replace("{reference}", rec.reference) # Find {reference} in the record and replace it
+                log.sms = sms_tmps 
                 if 200 >= status_code <= 299:
                     log.sms_sent = True
                 else:
                     log.sms_sent = False
                 log.write({'sms': log.sms , 'sms_sent': log.sms_sent})
 
-        print(status_code)
-
         return status_code
     
     """
-    curl -X POST -H "Authorization: Bearer XbwTrHQeljjEhTOVhXS2yVJFwH3G" -H "Content-Type: application/json" 
-    -d '{"outboundSMSMessageRequest":{"address": "tel:+261349477494", 
-    "senderAddress":"tel:+2613 20450952",
-    "outboundSMSTextMessage":{"message": "Hi Odoo Master, mety ito e"}}}' 
-    "https://api.orange.com/smsmessaging/v1/outbound/tel%3A%2B261320450952/requests"
+    curl -X POST -H "Authorization: Bearer dKZJDQ3GF8TyTkvxnGc6afTAzdci" -H "Content-Type: application/json" -d '{"outboundSMSMessageRequest":{"address": "tel:+261349477494","senderAddress":"tel:+261329959233","outboundSMSTextMessage":{"message": "Hi Odoo Master, it's OK"}}}' "https://api.orange.com/smsmessaging/v1/outbound/tel%3A%2B261329959233/requests"
     """
     def send_sms_via_orange(self, address="", senderAddress="", message=""):
         """
         Desc: Envoyer un sms au citoyen 
         @address: adresse du destinataire (citoyen), ex:320000000, 330000000, 340000000
-        @senderAddress: adresse de l'envoyeur, ex: 320450952
+        @senderAddress: adresse de l'envoyeur, ex: 329959233
         @message; message à envoyer
         Note: Le format du telephone 9 digits sans le +261
         """
-        headers = {
-            'Authorization': 'Bearer XbwTrHQeljjEhTOVhXS2yVJFwH3G',
-            'Content-Type': 'application/json',
-        }
+        status_code = 400
+        try:
+            headers = {
+                'Authorization': 'Bearer dKZJDQ3GF8TyTkvxnGc6afTAzdci',
+                'Content-Type': 'application/json',
+            }
 
-        data = '{"outboundSMSMessageRequest": {"address": "tel:+261%s","senderAddress":"tel:+261%s","outboundSMSTextMessage":{"message": "%s"}}}' % (address, senderAddress, message)
+            sender = senderAddress[-9:]
 
-        response = requests.post('https://api.orange.com/smsmessaging/v1/outbound/tel%3A%2B261{}/requests'.format(senderAddress), headers=headers, data=data)
+            data = '{"outboundSMSMessageRequest": {"address": "tel:+261%s","senderAddress":"tel:+261%s","outboundSMSTextMessage":{"message": "%s"}}}' % (address[1:], sender, message)
+            #data = '{"outboundSMSMessageRequest": {"address": "tel:+261%s","senderAddress":"tel:+261329959233","outboundSMSTextMessage":{"message": "%s"}}}' % (address[1:], message)
+            
+        
+            response = requests.post('https://api.orange.com/smsmessaging/v1/outbound/tel%3A%2B261{}/requests'.format(sender), headers=headers, data=data)
+            #response = requests.post('https://api.orange.com/smsmessaging/v1/outbound/tel%3A%2B261329959233/requests' , headers=headers, data=data)
+            
+            print("Sending SMS status: {}, Sender-phone: {}".format(response, senderAddress))
+        
+            return response.status_code
+        except:
+            pass
 
-        return response.status_code
+        return status_code
+
+# Auto reload
+# return {
+#     'type': 'ir.actions.client',
+#     'tag': 'reload',
+#}

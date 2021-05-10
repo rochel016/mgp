@@ -16,6 +16,7 @@
         <field name="res_model">mgp.plainte</field>
         <field name="view_mode">pivot</field>
         <field name="view_id" ref="mgp.plainte_pmo_pivot_view_board"/>
+        <field name="domain">[('user_pmo_id', '=', env.uid), ('statut','in',['state_traitement_pmo', 'state_closed_prea'])]</field>
     </record>
 
     <!--GRAPH 1-->
@@ -35,6 +36,7 @@
         <field name="res_model">mgp.plainte</field>
         <field name="view_mode">graph</field>
         <field name="view_id" ref="mgp.plainte_pmo_graph_view_board_1"/>
+        <field name="domain">[('user_pmo_id', '=', 'uid'), ('statut','in',['state_traitement_pmo', 'state_closed_prea'])]</field>
     </record>
 
     <!--GRAPH 2-->
@@ -53,19 +55,21 @@
         <field name="res_model">mgp.plainte</field>
         <field name="view_mode">graph</field>
         <field name="view_id" ref="mgp.plainte_pmo_graph_view_board_2"/>
+        <field name="domain">[('user_pmo_id', '=', 'uid'), ('statut','in',['state_traitement_pmo', 'state_closed_prea'])]</field>
     </record>
 
+    <!--ACTIONS-->
     <record id="pmo_plainte_dashboard_form_view" model="ir.ui.view">
         <field name="name">Dashboard Form</field>
         <field name="model">mgp.plainte</field>
         <field name="arch" type="xml">
-            <form string="Dashboard">
+            <form string="Dashboard">    
                 <board style="1-2">
                     <column>
-                        <action string="Plaintes - Catégorie" name="%(mgp.pmo_act_plainte_mgp_graph_2)d"/>
+                        <action string="Plaintes - Catégorie" name="%(mgp.pmo_act_plainte_mgp_graph_2)d" />
                     </column>
                     <column>
-                        <action string="Plaintes - à traiter" name="%(mgp.pmo_act_plainte_mgp_graph_1)d" />
+                        <action string="Plaintes - En cours" name="%(mgp.pmo_act_plainte_mgp_graph_1)d" />
                         <action string="Plaintes - TCD" name="%(mgp.pmo_act_plainte_mgp_pivot)d" />
                     </column>
                 </board>
