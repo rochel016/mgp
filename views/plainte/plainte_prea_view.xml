@@ -11,7 +11,8 @@
         <field name="categorie_id" />
         <field name="zone" string="Localisation"/>
         <field name="genre" />
-        <field name="jours_traitement" string="Nbr-jour(s)"/>
+        <field name="is_reprocessed" string="Retraitement" />
+        <field name="jours_traitement" string="Jour(s)"/>
         <field name="statut" 
           decoration-info="statut == 'state_validate_prea'"
           decoration-primary="statut == 'state_traitement_pmo'"
@@ -20,6 +21,14 @@
           decoration-success="statut == 'state_done_bpo'"
           decoration-danger="statut == 'state_invalid'"
           decoration-bf="id > 0"/>
+        
+        <field name="situation" string="Appel"
+          decoration-success="situation == 'joignable'"
+          decoration-danger="situation == 'injoignable'"/>
+
+        <field name="resultat" string="Satisfaction"
+          decoration-success="resultat == 'satisfait'"
+          decoration-danger="resultat == 'insatisfait'"/>
       </tree>
     </field>
   </record>
@@ -86,7 +95,8 @@
         <field name="statut" invisible="1"/> <!--IMPORTANT -->
         <field name="resultat" invisible="1"/> <!--IMPORTANT -->
         <field name="situation" invisible="1"/> <!--IMPORTANT -->
-        <field name="is_reprocessed" invisible="1"/>
+        <field name="is_reprocessed" invisible="1"/> <!--IMPORTANT -->
+        <field name="reprocessed_display" invisible="1"/> <!--IMPORTANT -->
         
         <!--Si avoir droit de modifier certains champs (voir field/méthode dans plainte.py: _check_write )-->
         <field name="check_write" invisible="1" />
@@ -108,15 +118,23 @@
           <!-- PREA actions -->
           <button name="action_cancel" type="object" class="btn btn-danger" 
             string="Ticket non valide"
-            confirm="Voulez vous vraiement annuler ce ticket?"
+            confirm="Ticket hord périmètre, Voulez vous l'annuler définitivement ?"
             statuts="state_invalid"
-            attrs="{'invisible': [('statut', '!=', 'state_validate_prea')]}"/>          
+            attrs="{'invisible': ['|', ('statut', '!=', 'state_validate_prea'), ('is_reprocessed', '=', True) ]}"/>          
 
+          <!--ASSIGNER ticket à un PMO-->
           <button name="assigner_tiket_user_pmo" type="object" class="oe_highlight" 
             string="Assigner ticket à un PMO" 
-            statuts="state_traitement_pmo"
-            attrs="{'invisible': [('statut', '!=', 'state_validate_prea')]}"/>
+            statuts="state_validate_prea"
+            attrs="{'invisible': ['|', ('statut', '!=', 'state_validate_prea'), ('is_reprocessed', '=', True)]}"/>
+          
+          <!--RE-ASSIGNER ticket au même PMO-->
+          <button name="re_assigner_tiket_user_pmo" type="object" class="oe_highlight" 
+            string="Re-assigner ticket au même PMO" 
+            statuts="state_validate_prea"
+            attrs="{'invisible': ['|', ('statut', '!=', 'state_validate_prea'), ('is_reprocessed', '=', False)]}"/>
 
+          <!--ENVOYER REPONSE AU BPO-->
           <button name="action_send_response_to_bpo" type="object" class="oe_highlight" 
             string="Envoyer réponse au BPO"
             confirm="Voulez vous envoyer la réponse au BPO?"
@@ -130,6 +148,7 @@
             statuts="state_eval_response_prea"
             attrs="{'invisible': [('statut', '!=', 'state_eval_response_prea')]}"/>
 
+          <!--FERMER TICKET-->
           <button name="action_close" type="object" class="oe_highlight"
             string="Fermer le ticket" 
             confirm="Voulez vous vraiment fermer ce ticket?"
@@ -227,8 +246,9 @@
           </div>
 
           <!--RIBBON du ticket invalide-->
-          <widget name="web_ribbon" text="INVALIDE" attrs="{'invisible': [('statut', '!=', 'state_invalid')]}" bg_color="bg-danger"/>
-
+          <widget name="web_ribbon" text="HORS PÉRIMÈTRE" attrs="{'invisible': [('statut', '!=', 'state_invalid')]}" bg_color="bg-danger"/>
+          <widget name="web_ribbon" text="INJOIGNABLE" attrs="{'invisible': [('situation', '!=', 'injoignable')]}" bg_color="bg-danger"/>
+        
           <!--RIBBON du ticket traité au niveau bpo-->
           <widget name="web_ribbon" text="TRAITÉ" attrs="{'invisible': [('statut', '!=', 'state_done_bpo')]}" bg_color="bg-success"/>
 
@@ -236,7 +256,14 @@
           <widget name="web_ribbon" text="FERMÉ" attrs="{'invisible': [('statut', '!=', 'state_closed_prea')]}" bg_color="bg-info"/>
 
           <!--RIBBON du ticket en cours de traitement-->
-          <widget name="web_ribbon" text="EN COURS" attrs="{'invisible': [('statut', 'in', ['state_closed_prea', 'state_done_bpo', 'state_invalid'])]}" bg_color="bg-warning"/>
+          <!-- <widget name="web_ribbon" text="EN COURS" attrs="{'invisible': ['|', ('is_reprocessed', '=', True), ('statut', 'in', ['state_closed_prea', 'state_done_bpo', 'state_invalid'])]}" bg_color="bg-warning"/>-->
+          <widget name="web_ribbon" text="À VALIDER PREA" attrs="{'invisible': ['|', ('is_reprocessed', '=', True), ('statut', '!=', 'state_validate_prea' )]}" bg_color="bg-warning"/>
+          <widget name="web_ribbon" text="À TRAITER PMO" attrs="{'invisible': ['|', ('is_reprocessed', '=', True), ('statut', '!=', 'state_traitement_pmo' )]}" bg_color="bg-warning"/>
+          <widget name="web_ribbon" text="À ÉVALUER PREA" attrs="{'invisible': ['|', ('is_reprocessed', '=', True), ('statut', '!=', 'state_eval_response_prea' )]}" bg_color="bg-warning"/>
+          <widget name="web_ribbon" text="À TRAITER BPO" attrs="{'invisible': ['|', ('is_reprocessed', '=', True), ('statut', '!=', 'state_send_response_bpo' )]}" bg_color="bg-warning"/>
+          
+          <!--RIBBON du ticket en cours de RE-TRAITMEENT-->
+          <widget name="web_ribbon" text="RETRAITEMENT" attrs="{'invisible': ['|', ('is_reprocessed', '=', False), ('statut', '=', 'state_closed_prea')]}" bg_color="bg-warning"/>
 
           <!-- Title -->
           <div class="oe_title" position="before">
@@ -266,8 +293,8 @@
           </group>
 
           <group>
-            <field name="categorie_id" readonly="1" options="{'no_create_edit': True, 'no_create': True, 'no_open': True}"/>
-            <field name="ennonce" string="Plainte/Doléance" placeholder="Exposez ici l'ennoncé de la plainte"
+            <field name="categorie_id" readonly="1" options="{'no_create_edit': True, 'no_create': True, 'no_open': True}" class="field_value_color"/>
+            <field name="ennonce" string="Plainte/Doléance" placeholder="Exposez ici l'ennoncé de la plainte" widget="html" height="50"
               attrs="{'readonly':['|', ('check_write', '=', True), ('statut', '=', 'state_invalid')]}"/>
           </group>
 
@@ -280,6 +307,8 @@
                   <field name="note" string="Notes" />
                   <field name="create_uid" string="Par" readonly="1" />
                   <field name="create_date" string="Le" readonly="1" />
+                  <field name="upload_file" filename="file_name"/>
+                  <field name="file_name" invisible="1"/>
                 </tree>
               </field>
             </page>
@@ -288,7 +317,10 @@
               <field name="reponse_ids" context="{'default_plainte_id':active_id}" widget="one2many_list">
                 <tree editable="bottom">
                   <field name="plainte_id" invisible="1" />
-                  <field name="reponse" class="field_value_color" />
+                  <field name="reponse" class="field_value_color" readonly="1" />
+                  <field name="create_date" string="Le" readonly="1" />
+                  <field name="upload_file" filename="file_name" readonly="1"/>
+                  <field name="file_name" invisible="1"/>
                 </tree>
               </field>
             </page>
@@ -306,10 +338,10 @@
             </page>
           </notebook>
         </sheet>
-        <div class="oe_chatter">
+        <!-- <div class="oe_chatter">
           <field name="message_follower_ids" widget="mail_followers"/>
           <field name="message_ids" widget="mail_thread"/>
-        </div>
+        </div> -->
       </form>
     </field>
   </record>
@@ -327,6 +359,7 @@
         <field name="statut" />
         <field name="is_reprocessed" />
         <field name="categorie_wrap" />
+        <field name="jours_traitement"/>
 
         <progressbar
             field="statut"
@@ -358,30 +391,48 @@
                 </t>
 
                 <ul>
-                  <li><span class="mgp_label fa fa-clock-o"></span><field name="date_appel"/></li>
-                  <li><span class="mgp_label fa fa-map-marker"></span><field name="district_id"/></li>
-                  <li><span class="mgp_label fa fa-commenting"></span><field name="categorie_wrap"/></li>
+                  <li><span class="mgp_label fa fa-clock-o"><field name="date_appel"/></span></li>
+                  <li><span class="mgp_label fa fa-map-marker"><field name="district_id"/></span></li>
+                  <li><span class="mgp_label fa fa-commenting"><field name="categorie_wrap"/></span></li>
                   <li>
                     <t t-if="record.statut.raw_value=='state_done_bpo'">
                       <div class="ribbon-success"><p>Traité</p></div>
                     </t>
                     <t t-elif="record.statut.raw_value=='state_closed_prea'">
-                      <div class="ribbon-secondary"><p>Fermé</p></div>
+                      <div class="ribbon-closed"><p>Fermé</p></div>
                     </t>
                     <t t-elif="record.statut.raw_value=='state_invalid'">
-                      <div class="ribbon-danger"><p>Invalide</p></div>
+                      <t t-if="record.response_complete.raw_value">
+                        <div class="ribbon-danger"><p>Injoignable</p></div>
+                      </t> 
+                      <t t-else="">
+                        <div class="ribbon-danger"><p>Hors périmetre</p></div>
+                      </t>
                     </t>
                     <t t-elif="record.response_complete.raw_value">
-                      <div class="ribbon-info"><p>Réponse complète</p></div>
-                      <div class="space_height"></div>
-                      <div class="ribbon-warning"><p>En cours</p></div>
+                      <t t-if="record.jours_traitement.raw_value>30">
+                        <div class="ribbon-response space_right" title="Réponse complète">R</div><div class="ribbon-warning space_right">En cours</div><div class="ribbon-days-warning"><field name="jours_traitement"/>j</div>
+                      </t>
+                      <t t-else="">
+                        <div class="ribbon-response space_right" title="Réponse complète">R</div><div class="ribbon-warning space_right">En cours</div><div class="ribbon-days"><field name="jours_traitement"/>j</div>                          
+                      </t>
                     </t>
                     <t t-elif="record.statut.raw_value!='state'">
                       <t t-if="record.is_reprocessed.raw_value">
-                        <div class="ribbon-warning"><p>En retraitement</p></div>
+                        <t t-if="record.jours_traitement.raw_value>30">
+                          <div class="ribbon-retraitement space_right">En retraitement</div><div class="ribbon-days-warning"><field name="jours_traitement"/>j</div>
+                        </t>
+                        <t t-else="">
+                          <div class="ribbon-retraitement space_right">En retraitement</div><div class="ribbon-days"><field name="jours_traitement"/>j</div>
+                        </t>
                       </t>
                       <t t-else="">
-                        <div class="ribbon-warning"><p>En cours</p></div>
+                        <t t-if="record.jours_traitement.raw_value>30">
+                          <div class="ribbon-warning space_right">En cours </div><div class="ribbon-days-warning"><field name="jours_traitement"/>j</div>
+                        </t>
+                        <t t-else="">
+                          <div class="ribbon-warning space_right">En cours </div><div class="ribbon-days"><field name="jours_traitement"/>j</div>
+                        </t>
                       </t>
                     </t>
                   </li>

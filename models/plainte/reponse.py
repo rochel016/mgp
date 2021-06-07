@@ -9,6 +9,10 @@ class Reponse(models.Model):
     plainte_id = fields.Many2one('mgp.plainte', ondelete='cascade', string="Plainte", required=True)
     reponse = fields.Text(string="Réponses", required=True)
 
+    # attached file for each answer
+    upload_file = fields.Binary(string="Fichier")
+    file_name = fields.Char(string="Nom du fichier")
+
     # Contrainte d'unicité
     _sql_constraints = [
                      ('reponse_unique', 

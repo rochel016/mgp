@@ -6,9 +6,17 @@
     <!-- MENU VERTICAL -->
     <menuitem id="plainte_sub_menu" parent="root_menu" name="Plaintes" sequence="31"/>
 
-    <!-- MENU PLAINTE PMO: seul BPO  accede à ce menu-->
-    <menuitem id="plainte_bpo_menu" parent="root_menu" name="Création des plaintes" action="plainte_bpo_action_window"
+    <!-- MENU PLAINTE BPO: seul BPO  accede à ce menu-->
+    <menuitem id="plainte_bpo_menu" parent="root_menu" name="Gestion des plaintes" action="plainte_bpo_action_window"
         groups="mgp.mgp_gouvernance_operateur" sequence="32"/>
+    <!-- <menuitem id="plainte_bpo_search_menu" parent="root_menu" name="Recherche des plaintes" action="plainte_bpo_list_search_action_window"
+        groups="mgp.mgp_gouvernance_operateur" sequence="321"/> -->
+    <menuitem id="plainte_bpo_search_menu" parent="root_menu"  name="Recherche des plaintes"  action="plainte_bpo_list_search_action_window_popup"
+        groups="mgp.mgp_gouvernance_operateur" sequence="322"/>
+
+    <!-- MENU PLAINTE STAFF BPO: seul Le responsble qualité" BPO  accede à ce menu-->
+    <menuitem id="plainte_bpo_qualite_menu" parent="root_menu" name="Situation des plaintes" action="plainte_bpo_qualite_action_window"
+        groups="mgp.mgp_gouvernance_operateur_qualite" sequence="320"/>
 
     <!-- MENU PLAINTE PMO: seul PREA  accede à ce menu-->
     <menuitem id="plainte_prea_menu" parent="root_menu" name="Gestion des plaintes" action="plainte_prea_action_window"
@@ -59,8 +67,6 @@
         sequence="51"
         groups="mgp.mgp_gouvernance_prea"/>
     
-    
-    
     <!--PMO-->
     <menuitem
         id="menu_dashboard_pmo"
@@ -68,6 +74,5 @@
         parent="root_menu"
         action="pmo_plainte_dashboard"
         sequence="60" 
-        groups="mgp.mgp_gouvernance_pmo"/> 
-
+        groups="mgp.mgp_gouvernance_pmo"/>  
 </odoo>

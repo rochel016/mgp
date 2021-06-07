@@ -30,6 +30,8 @@
         "views/plainte/plainte_bpo_view.xml",
         "views/plainte/plainte_prea_view.xml",
         "views/plainte/plainte_pmo_view.xml",
+        "views/plainte/plainte_bpo_qualite_view.xml",
+        "views/plainte/plainte_bpo_list_search_view.xml", # A appeler dans un popup
 
         # Paramétrage des plaintes
         "views/plainte/categorie_view.xml",

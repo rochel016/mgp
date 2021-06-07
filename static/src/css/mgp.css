@@ -38,7 +38,12 @@
 }
 
 .field_value_color {
-    color: #052EF9;
+    color: #4f5369;
+}
+
+.tree_field_value {
+   color: #4f5369;
+   height: 50px;
 }
 
 .radius-standard {
@@ -114,8 +119,8 @@
  .ribbon-warning {
     font-size: 12px;
     height: 17px;
-    color: white !important;
-    background: #FFC107; 
+    color: rgb(5, 5, 5) !important;
+    background: #ebd184; 
     padding-left: 10px;
     padding-right: 10px;
     border-radius: 5px 20px 5px;
@@ -144,3 +149,63 @@
     border-radius: 5px 20px 5px;
     display: inline-flex;
  }
+
+ .ribbon-response {
+   font-size: 12px;
+   height: 17px;
+   color: white !important;
+   background: #5361db; 
+   padding-left: 5px;
+   padding-right: 5px;
+   border-radius: 20px 20px 20px;
+   display: inline-flex;
+ }
+
+ .ribbon-days {
+   font-size: 12px;
+   height: 17px;
+   color: white !important;
+   background: #b125a5; 
+   padding-left: 5px;
+   padding-right: 5px;
+   border-radius: 20px 20px 20px;
+   display: inline-flex;
+ }
+
+ .ribbon-days-warning {
+   font-size: 12px;
+   height: 17px;
+   color: white !important;
+   background: #ff0000; 
+   padding-left: 5px;
+   padding-right: 5px;
+   border-radius: 20px 20px 20px;
+   display: inline-flex;
+ }
+
+ .ribbon-retraitement {
+   font-size: 12px;
+   height: 17px;
+   color: rgb(255, 255, 255) !important;
+   background: #e0832c; 
+   padding-left: 10px;
+   padding-right: 10px;
+   border-radius: 5px 20px 5px;
+   display: inline-flex;
+}
+
+.ribbon-closed {
+   font-size: 12px;
+   height: 17px;
+   color: white !important;
+   background: #17A2B8; 
+   padding-left: 10px;
+   padding-right: 10px;
+   border-radius: 5px 20px 5px;
+   display: inline-flex;
+}
+
+/*---------------------*/
+.tree_search[data-id="zone"] {
+   width: 1000px;
+}

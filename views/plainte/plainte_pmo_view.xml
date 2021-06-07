@@ -76,9 +76,11 @@
         <field name="situation" invisible="1"/> <!--IMPORTANT -->
         <field name="resultat" invisible="1"/> <!--IMPORTANT -->
         <field name="has_response" invisible="1"/> <!--IMPORTANT -->
+        <field name="is_reprocessed" invisible="1"/> <!--IMPORTANT -->
+        
         <header>
           <!--Group receiver of current user ('is_last_group_receiver', '=', False) -->
-          <field name="is_last_group_receiver" invisible="1" />
+          <field name="is_last_group_receiver" invisible="1" /><!--IMPORTANT -->
 
           <button name="action_send_response_to_prea" type="object" class="oe_highlight"
             string="Envoyer réponse" 
@@ -89,7 +91,7 @@
           <!--RETOUR DU TICKET: MAUVAIS DESTINATAIRE-->
           <button name="action_return_ticket_to_prea" type="object" class="btn btn-warning"
             string="Retour ticket" 
-            confirm="Voulez vous renvoyer ce ticket au PREA (cause: mauvais destinataire) ?"
+            confirm="Voulez vous renvoyer ce ticket au PREA (Cause: Mauvais destinataire) ?"
             statuts="state_traitement_pmo"
             attrs="{'invisible': [('has_response', '=', True)]}"/>
 
@@ -176,17 +178,12 @@
             </button>
           </div>
 
-          <!--RIBBON du ticket invalide-->
-          <widget name="web_ribbon" text="INVALIDE" attrs="{'invisible': [('statut', '!=', 'state_invalid')]}" bg_color="bg-danger"/>
-
-          <!--RIBBON du ticket traité au niveau bpo-->
-          <widget name="web_ribbon" text="TRAITÉ" attrs="{'invisible': [('statut', '!=', 'state_done_bpo')]}" bg_color="bg-success"/>
-
           <!--RIBBON du ticket fermé-->
           <widget name="web_ribbon" text="FERMÉ" attrs="{'invisible': [('statut', '!=', 'state_closed_prea')]}" bg_color="bg-info"/>
 
           <!--RIBBON du ticket en cours de traitement-->
-          <widget name="web_ribbon" text="EN COURS" attrs="{'invisible': [('statut', 'in', ['state_closed_prea', 'state_done_bpo', 'state_invalid'])]}" bg_color="bg-warning"/>
+          <widget name="web_ribbon" text="EN TRAITEMENT" attrs="{'invisible': ['|', ('is_reprocessed', '=', True), ('statut', '!=', 'state_traitement_pmo' )]}" bg_color="bg-warning"/>
+          <!-- <widget name="web_ribbon" text="EN COURS" attrs="{'invisible': ['|', ('is_reprocessed', '=', True), ('statut', 'in', ['state_closed_prea', 'state_done_bpo', 'state_invalid'])]}" bg_color="bg-warning"/> -->
 
           <!-- Title -->
           <div class="oe_title" position="before">
@@ -221,8 +218,8 @@
 
           <group>
             <field name="categorie_id" readonly="1"
-                options="{'no_create_edit': True, 'no_create': True, 'no_open': True}" />
-            <field name="ennonce" string="Plainte/Doléance" readonly="1" />
+                options="{'no_create_edit': True, 'no_create': True, 'no_open': True}" class="field_value_color"/>
+            <field name="ennonce" string="Plainte/Doléance" readonly="1" widget="html" height="50" />
           </group>
 
           <notebook>
@@ -234,6 +231,8 @@
                   <field name="note" string="Notes"/>
                   <field name="create_uid" string="Par" readonly="1" />
                   <field name="create_date" string="Le" readonly="1" />
+                  <field name="upload_file" filename="file_name"/>
+                  <field name="file_name" invisible="1"/>
                 </tree>
               </field>
             </page>
@@ -241,9 +240,12 @@
             <page name="Responses" string="Réponse" autofocus="autofocus">
               <field name="reponse_ids" context="{'default_plainte_id':active_id}" widget="one2many_list"
                 attrs="{'readonly':['|', ('statut', '!=', 'state_traitement_pmo'), ('statut', 'in', ['|', 'state','state_invalid','state_closed_prea'])]}">
-                <tree editable="bottom">
+                <tree editable="bottom" delete="true">
                   <field name="plainte_id" invisible="1" />
-                  <field name="reponse" class="field_value_color" />
+                  <field name="reponse" class="tree_field_value" />
+                  <field name="create_date" string="Le" readonly="1" />
+                  <field name="upload_file" filename="file_name"/>
+                  <field name="file_name" invisible="1"/>
                 </tree>
               </field>
               <group>
@@ -264,11 +266,11 @@
             </page>
           </notebook>
         </sheet>
-        <div class="oe_chatter">
+        <!-- <div class="oe_chatter">
           <field name="message_follower_ids" widget="mail_followers"/>
-          <!-- <field name="activity_ids" widget="mail_activity"/> -->
+          <field name="activity_ids" widget="mail_activity"/>
           <field name="message_ids" widget="mail_thread"/>
-        </div>
+        </div> -->
       </form>
     </field>
   </record>
@@ -304,29 +306,43 @@
                 <div class="o_kanban_tags_section" />
                 <strong><field name="reference" /></strong>
                 <ul>
-                  <li><span class="mgp_label fa fa-clock-o"></span><field name="date_appel"/></li>
-                  <li><span class="mgp_label fa fa-map-marker"></span><field name="district_id"/></li>
-                  <li><span class="mgp_label fa fa-commenting"></span><field name="categorie_wrap"/></li>
+                  <li><span class="mgp_label fa fa-clock-o"><field name="date_appel"/></span></li>
+                  <li><span class="mgp_label fa fa-map-marker"><field name="district_id"/></span></li>
+                  <li><span class="mgp_label fa fa-commenting"><field name="categorie_wrap"/></span></li>
                   <li>
                     <t t-if="record.statut.raw_value=='state_done_bpo'">
                       <div class="ribbon-success"><p>Traité</p></div>
                     </t>
                     <t t-elif="record.statut.raw_value=='state_closed_prea'">
-                      <div class="ribbon-secondary"><p>Fermé</p></div>
+                      <div class="ribbon-closed"><p>Fermé</p></div>
                     </t>
                     <t t-elif="record.statut.raw_value=='state_invalid'">
                       <div class="ribbon-danger"><p>Invalide</p></div>
                     </t>
                     <t t-elif="record.response_complete.raw_value">
-                      <div class="ribbon-info"><p>Réponse complète</p></div>
-                      <div class="ribbon-warning"><p>En cours</p></div>
+                      <t t-if="record.jours_traitement.raw_value>30">
+                        <div class="ribbon-response space_right" title="Réponse complète">R</div><div class="ribbon-warning space_right">En cours</div><div class="ribbon-days-warning"><field name="jours_traitement"/>j</div>
+                      </t>
+                      <t t-else="">
+                        <div class="ribbon-response space_right" title="Réponse complète">R</div><div class="ribbon-warning space_right">En cours</div><div class="ribbon-days"><field name="jours_traitement"/>j</div>                          
+                      </t>
                     </t>
                     <t t-elif="record.statut.raw_value!='state'">
                       <t t-if="record.is_reprocessed.raw_value">
-                        <div class="ribbon-warning"><p>En retraitement</p></div>
+                        <t t-if="record.jours_traitement.raw_value>30">
+                          <div class="ribbon-retraitement space_right">En retraitement</div><div class="ribbon-days-warning"><field name="jours_traitement"/>j</div>
+                        </t>
+                        <t t-else="">
+                          <div class="ribbon-retraitement space_right">En retraitement</div><div class="ribbon-days"><field name="jours_traitement"/>j</div>
+                        </t>
                       </t>
                       <t t-else="">
-                        <div class="ribbon-warning"><p>En cours</p></div>
+                        <t t-if="record.jours_traitement.raw_value>30">
+                          <div class="ribbon-warning space_right">En cours </div><div class="ribbon-days-warning"><field name="jours_traitement"/>j</div>
+                        </t>
+                        <t t-else="">
+                          <div class="ribbon-warning space_right">En cours </div><div class="ribbon-days"><field name="jours_traitement"/>j</div>
+                        </t>
                       </t>
                     </t>
                   </li>

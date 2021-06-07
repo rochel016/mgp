@@ -1,0 +1,91 @@
+<odoo>
+  <record id="plainte_bpo_list_search_criterion_view" model="ir.ui.view">
+    <field name="name">plainte.bpo.list.search.criterion</field>
+    <field name="model">mgp.plainte</field>
+    <field name="arch" type="xml">
+      <search string="Recherche des tickets">
+        <field name="reference" string="Ticket n°"/>
+        <field name="date_appel"/>
+        <field name="tel"/>
+        <field name="genre" />
+
+        <separator string="Statut"/>
+        <filter string='Tickets créés' name='state' domain="[('statut', '=', 'state')]"/>
+        <filter string='A valider par PREA' name='state_validate_prea' domain="[('statut', '=', 'state_validate_prea')]"/>
+        <filter string='A traiter par PMO' name='state_traitement_pmo' domain="[('statut', '=', 'state_traitement_pmo')]"/>
+        <filter string='A évaluer par PREA' name='state_eval_response_prea' domain="[('statut', '=', 'state_eval_response_prea')]"/>
+        <filter string='Tickets à traiter par BPO' name='state_send_response_bpo' domain="[('statut', '=', 'state_send_response_bpo')]"/>
+        <filter string='Ticktes traités' name='state_done_bpo' domain="[('statut', '=', 'state_done_bpo')]"/>
+        <filter string='Tickets invalides' name='state_invalid' domain="[('statut', '=', 'state_invalid')]"/>
+        <filter string='Fermés par PREA' name='state_closed_prea' domain="[('statut', '=', 'state_closed_prea')]"/>
+
+        <separator string="Situation"/>
+        <filter string='Joignable' name='Joignable' domain="[('situation', '=', 'joignable')]"/>
+        <filter string='Injoignable' name='Injoignable' domain="[('situation', '=', 'injoignable')]"/>
+
+        <separator string="Résultat"/>
+        <filter string='Satisfait' name='Satisfait' domain="[('resultat', '=', 'satisfait')]"/>
+        <filter string='Non satisfait' name='insatisfait' domain="[('resultat', '=', 'insatisfait')]"/>
+
+        <group expand="0" string="Group By">
+          <filter string='Statut' name='statut' context="{'group_by':'statut'}"/>
+          <filter string='Situation' name='situation' context="{'group_by':'situation'}"/>
+          <filter string='Resultat' name='resultat' context="{'group_by':'resultat'}"/>
+        </group>
+      </search>
+    </field>
+  </record>
+
+  <!-- explicit list view definition -->
+  <record id="plainte_bpo_list_search_view" model="ir.ui.view">
+    <field name="name">Plaintes.list.search</field>
+    <field name="model">mgp.plainte</field>
+    <field name="arch" type="xml">
+      <tree create="false" edit="false" delete="false" duplicate="false" class="tree_search"> <!--export_xlsx="false"-->
+        <field name="reference" string="Ticket N°" decoration-bf="id > 0"/>
+        <field name="date_appel" />
+        <!-- <field name="zone" string="Localisation"/> -->
+        <field name="response_complete" string="Réponse complète"/>
+        <field name="jours_traitement" string="Jour(s)" />
+        <field name="is_reprocessed" string="Retraitement" />
+        
+        <field name="statut"
+          decoration-bf="statut == 'state'" 
+          decoration-info="statut == 'state_validate_prea'"
+          decoration-primary="statut == 'state_traitement_pmo'"
+          decoration-it="statut == 'state_eval_response_prea'"
+          decoration-warning="statut == 'state_send_response_bpo'"
+          decoration-success="statut == 'state_done_bpo'"
+          decoration-danger="statut == 'state_invalid'"
+          decoration-muted="statut == 'state_closed_prea'"/>
+        
+        <field name="situation" string="Appel"
+          decoration-success="situation == 'joignable'"
+          decoration-danger="situation == 'injoignable'"/>
+
+        <field name="resultat" string="Satisfaction"
+          decoration-success="resultat == 'satisfait'"
+          decoration-danger="resultat == 'insatisfait'"/>
+      </tree>
+    </field>
+  </record>
+
+  <!-- server action to the one above -->
+  <record id="plainte_bpo_list_search_action_window" model="ir.actions.act_window">
+    <field name="name">Recherche des plaintes</field>
+    <field name="res_model">mgp.plainte</field>
+    <field name="view_mode">tree</field>
+    <field name="view_id" ref="plainte_bpo_list_search_view"/>
+    <field name="search_view_id" ref="plainte_bpo_list_search_criterion_view"/>
+  </record>
+
+  <!--server action permettant d'appeler un popup à partir du code python via menu click-->
+  <record id="plainte_bpo_list_search_action_window_popup" model="ir.actions.server">
+    <field name="name">Ouvrir un popup list search view pour BPO</field>
+    <field name="model_id" ref="model_mgp_plainte"/>
+    <field name="state">code</field>
+    <field name="code">
+        action = model.open_popup_list_search_tickets()
+    </field>
+  </record>
+</odoo>

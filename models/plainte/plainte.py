@@ -95,9 +95,9 @@ class Plainte(models.Model):
         ('state_traitement_pmo', 'A traiter par PMO'), # En traitement ched PMO
         ('state_eval_response_prea', 'A évaluer par PREA'), # EN évaluation chez PREA
         ('state_send_response_bpo', 'A traiter par BPO'), # Donner la réponse au citoyen par BPO
-        ('state_done_bpo', 'Tickets traités'), # Le traitment du ticket est terminé
-        ('state_invalid', 'Invalides'), # Ticket invalide par le PREA (non exploitable)
-        ('state_closed_prea', 'Fermés'), # Ticket fermé par le PREA
+        ('state_done_bpo', 'Ticket traité'), # Le traitment du ticket est terminé
+        ('state_invalid', 'Invalide'), # Ticket invalide par le PREA (non exploitable)
+        ('state_closed_prea', 'Fermé'), # Ticket fermé par le PREA
     ], string='Statut', readonly=True, copy=False, default='state', group_expand='_expand_states')
 
     def _expand_states(self, states, domain, order):
@@ -106,6 +106,11 @@ class Plainte(models.Model):
             return {'state': 'Créés par BPO',
                     'state_send_response_bpo': 'A traiter par BPO',
                     'state_done_bpo': 'Traité'}
+        elif self.env.user.has_group('mgp.mgp_gouvernance_operateur_qualite'):
+            return {'state': 'Créés par BPO',
+                    'state_send_response_bpo': 'A traiter par BPO',
+                    'state_done_bpo': 'Traité',
+                    'state_invalid': 'Invalide'}
         elif self.env.user.has_group('mgp.mgp_gouvernance_prea'):
             return {'state_validate_prea': 'A valider par PREA',
                     'state_traitement_pmo': 'A traiter par PMO',
@@ -278,7 +283,7 @@ class Plainte(models.Model):
             if rec.is_reprocessed:
                 rec.reprocessed_display = 'Ticket en'
             else:
-                rec.reprocessed_display = ''
+                rec.reprocessed_display = '' 
 
     # -------------------------------------------------------
     # ------------------- Contraintes champs ----------------
@@ -289,13 +294,13 @@ class Plainte(models.Model):
         for rec in self:
             if len(rec.tel) != 10 or not re.match(r"^[0-9;]+$", rec.tel):
                 raise ValidationError(_("Le numéro doit être de 10 chiffres"))
-                # ??? return {
+                # return {
                 #     'type': 'ir.actions.client',
                 #     'tag': 'display_notification',
                 #     'params': {
-                #         'title': _('Envoi du ticket au PREA'),
-                #         'message': _("Le ticket n° a été envoyée aux admin PREA."),
-                #         'type':'success',  
+                #         'title': _('Erreur de validation'),
+                #         'message': _("Le numéro doit être de 10 chiffres !"),
+                #         'type':'danger',  
                 #         'sticky': False,
                 #     },
                 # }
@@ -916,8 +921,8 @@ class Plainte(models.Model):
                     'type': 'ir.actions.client',
                     'tag': 'display_notification',
                     'params': {
-                        'title': _('Annulation/Retour du ticket'),
-                        'message': _("Erreur d'annulation! Ce ticket est en cours de traitement (voir réponse)"),
+                        'title': _('Renvoi/Retour du ticket'),
+                        'message': _("Erreur de renvoi de ticket! Ce ticket est en cours de traitement (voir réponse)"),
                         'type':'warning',  
                         'sticky': False,
                     },
@@ -925,6 +930,7 @@ class Plainte(models.Model):
             else:
                 # 1 - Update ticket state
                 rec.statut = 'state_validate_prea'
+                rec.user_pmo_id = None # Mettre null le PMO
             
                 # 2 - Log : Retourne/Annule le ticket
                 log = self._do_log(
@@ -936,7 +942,7 @@ class Plainte(models.Model):
                     notif_sender = "Ticket n° {} retourné au PREA".format(rec.reference),
                     notif_receiver = "Ticket n° {} en attente de validation".format(rec.reference))
                 
-                # 3 - Envoyer message de reussite
+                #3 - Envoyer message de reussite
                 # return {
                 #     'type': 'ir.actions.client',
                 #     'tag': 'display_notification',
@@ -947,6 +953,10 @@ class Plainte(models.Model):
                 #         'sticky': False,
                 #     },
                 # }
+
+                # 4 - Retour à la lite des tickets (en mode kanban)
+                action = self.env.ref('mgp.plainte_pmo_action_window').sudo().read()[0]
+                return action
                     
     #-----------------------------------------------------------
     #-------------------- Workflow ACTIONS PREA -----------------
@@ -1068,20 +1078,37 @@ class Plainte(models.Model):
     # ---------- Assigner ticket à un user du PMO -----------
     # -------------------------------------------------------
     def assigner_tiket_user_pmo(self):
-        title = 'Assigner le ticket n°{} à un utilisateur du PMO'.format(self.reference)
+        if not self.user_pmo_id:
+            title = 'Assigner le ticket n°{} à un utilisateur du PMO'.format(self.reference)
+        
+            return {
+                'name': title,
+                'res_model':'mgp.plainte',
+                'view_mode':'form',
+                'res_id':self.id,
+                'type':'ir.actions.act_window',
+                'view_id':self.env.ref('mgp.select_pmo_form_view').id, 
+                'target':'new',
+                'flags': {'initial_mode': 'edit'},
+            }
+    
+    # -------------------------------------------------------
+    # ---------- RE-Assigner ticket au même user PMO --------
+    # -------------------------------------------------------
+    def re_assigner_tiket_user_pmo(self):
         if self.user_pmo_id:
             title = "Re-assigner le ticket n°{} à ".format(self.reference)
 
-        return {
-            'name': title,
-            'res_model':'mgp.plainte',
-            'view_mode':'form',
-            'res_id':self.id,
-            'type':'ir.actions.act_window',
-            'view_id':self.env.ref('mgp.select_pmo_form_view').id, 
-            'target':'new',
-            'flags': {'initial_mode': 'edit'},
-        }
+            return {
+                'name': title,
+                'res_model':'mgp.plainte',
+                'view_mode':'form',
+                'res_id':self.id,
+                'type':'ir.actions.act_window',
+                'view_id':self.env.ref('mgp.select_pmo_form_view').id, 
+                'target':'new',
+                'flags': {'initial_mode': 'edit'},
+            }
 
     # User PMO qui traite le dossier
     user_pmo_name = fields.Char(compute='_get_user_pmo_name', default="", store=False)
@@ -1311,8 +1338,21 @@ class Plainte(models.Model):
 
         return status_code
 
-# Auto reload
-# return {
-#     'type': 'ir.actions.client',
-#     'tag': 'reload',
-#}
+    # Auto reload
+    # return {
+    #     'type': 'ir.actions.client',
+    #     'tag': 'reload',
+    #}
+    
+    # -------------------------------------------------------
+    # ------------------ Server functions -------------------
+    # -------------------------------------------------------
+    def open_popup_list_search_tickets(self):
+        return {
+            'name': _('Recherche de tickets'),
+            'type': 'ir.actions.act_window',
+            'view_id': self.env.ref('mgp.plainte_bpo_list_search_view').id, #'plainte_bpo_list_search_action_window',
+            'view_mode': 'tree',
+            'res_model': 'mgp.plainte',
+            'target': 'new'
+        }

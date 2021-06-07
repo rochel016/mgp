@@ -47,7 +47,7 @@ odoo.define('mgp.ticket_systray', function (require) {
                                 let message = tickets_list[index][2]
                                 
                                 // Each ticket to be processed
-                                self.$('.tickets_list_notif').append('<button type="button" class="btn btn-primary btn-xs click-edit" style="width: 100%; border-radius: 2px;" data-id="' + id + '" data-ref="' + reference + '">' + message + '</button><div style="height: 1px;"><div/>');
+                                self.$('.tickets_list_notif').append('<button type="button" class="btn btn-primary btn-xs click-edit" style="width: 100%; border-radius: 2px;" data-id="' + id + '" data-ref="' + reference + '">' + message + '</button><div style="height: 2px;"><div/>');
                             }
                         },  50);
                     }
@@ -132,7 +132,7 @@ odoo.define('schedule.udpate_ticket_systray', function(require) {
                         let message = tickets_list[index][2]
                         
                         // Each ticket to be processed
-                        self.$('.tickets_list_notif').append('<button type="button" class="btn btn-primary btn-xs click-edit" style="width: 100%; border-radius: 2px;" data-id="' + id + '" data-ref="' + reference + '">' + message + '</button><div style="height: 1px;"><div/>');
+                        self.$('.tickets_list_notif').append('<button type="button" class="btn btn-primary btn-xs click-edit" style="width: 100%; border-radius: 2px;" data-id="' + id + '" data-ref="' + reference + '">' + message + '</button><div style="height: 2px;"><div/>');
                     }
                 },  50);
             }
@@ -140,5 +140,5 @@ odoo.define('schedule.udpate_ticket_systray', function(require) {
     }
 
     // Refresh systray icon each X seconds
-    setInterval(RefreshSystrayIcon, 5000); // 5 seconds
+    setInterval(RefreshSystrayIcon, 10000); // 10 seconds
 });

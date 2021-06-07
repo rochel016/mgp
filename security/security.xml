@@ -12,19 +12,21 @@
         <field name="category_id" ref="mgp.gouvernance"/>
     </record>
 
-    <!-- Groups -->
     <record id="mgp_gouvernance_operateur" model="res.groups">
         <field name="name">Call BPO</field>
         <field name="comment">Un opérateur du centre d’appels est la personne qui réceptionne les plaintes ou doléances sur le numéro vert « Allo Volamahitsy » et qui retransmet aux citoyens les informations dont ils ont besoins en retour.</field>
         <field name="category_id" ref="mgp.gouvernance"/>
-        <!-- <field name="implied_ids" eval="[(4, ref('mgp_gouvernance_pmo'))]"/> -->
     </record>
 
     <record id="mgp_gouvernance_prea" model="res.groups">
         <field name="name">Admin PREA</field>
         <field name="comment">L’administrateur PREA est la personne qui monitore et dispatche les tickets aux PMO.</field>
         <field name="category_id" ref="mgp.gouvernance"/>
-        <!-- <field name="implied_ids" eval="[(4, ref('mgp_gouvernance_operateur'))]"/> -->
     </record>
     
+    <record id="mgp_gouvernance_operateur_qualite" model="res.groups">
+        <field name="name">Qualité BPO</field>
+        <field name="comment">Un gestionnaire de qualité du centre d’appels est la personne qui supérvise et contrôle les travaux des opérateurs.</field>
+        <field name="category_id" ref="mgp.gouvernance"/>
+    </record>
 </odoo>

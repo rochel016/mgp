@@ -53,16 +53,20 @@
         <field name="reference" string="Ticket" decoration-bf="id > 0"/>
         <field name="date_appel" />
         <field name="zone" string="Localisation"/>
-        <field name="jours_traitement" string="Nbr-jour(s)"/>
-        <field name="statut" 
+        <field name="is_reprocessed" string="Retraitement" />
+        <field name="jours_traitement" string="Jour(s)"/>
+        <field name="statut"
           decoration-warning="statut == 'state'" 
-          decoration-info="statut == 'state_validate_prea'"
-          decoration-primary="statut == 'state_traitement_pmo'"
-          decoration-it="statut == 'state_eval_response_prea'"
           decoration-muted="statut == 'state_send_response_bpo'"
-          decoration-success="statut == 'state_done_bpo'"
-          decoration-danger="statut == 'state_invalid'"
-          decoration-bf="id > 0"/>
+          decoration-success="statut == 'state_done_bpo'"/>
+        
+        <field name="situation" string="Appel"
+          decoration-success="situation == 'joignable'"
+          decoration-danger="situation == 'injoignable'"/>
+
+        <field name="resultat" string="Satisfaction"
+          decoration-success="resultat == 'satisfait'"
+          decoration-danger="resultat == 'insatisfait'"/>
       </tree>
     </field>
   </record>
@@ -74,6 +78,8 @@
     <field name="arch" type="xml">
       <form>
         <field name="response_complete" invisible="1"/> <!--IMPORTANT -->
+        <field name="is_reprocessed" invisible="1"/> <!--IMPORTANT -->
+
         <header>
           <!--Group receiver of current user ('is_last_group_receiver', '=', False) -->
           <field name="is_last_group_receiver" invisible="1" />
@@ -107,7 +113,7 @@
           
           <button name="action_non_satisfait" type="object" class="oe_highlight"
             string="Non satisfait" 
-            confirm="Voulez vous informer le PREA que le citoyen n'est pas satisfait ?"
+            confirm="Etes vous sûr d'envoyer ce ticket pour retraitement ?"
             statuts="state_send_response_bpo"
             attrs="{'invisible': ['|', ('situation', '!=', 'joignable'), 
               ('resultat', 'in', ['satisfait', 'insatisfait'])]}"/>
@@ -202,19 +208,13 @@
 
           <!--RIBBON du ticket nouveau-->
           <widget name="web_ribbon" text="NOUVEAU" attrs="{'invisible': [('statut', '!=', 'state')]}" bg_color="bg-dark"/>
-
-          <!--RIBBON du ticket invalide-->
-          <widget name="web_ribbon" text="INVALIDE" attrs="{'invisible': [('statut', '!=', 'state_invalid')]}" bg_color="bg-danger"/>
-
+          
+          <!--RIBBON à traiter par BPO-->
+          <widget name="web_ribbon" text="EN TRAITEMENT" attrs="{'invisible': ['|', ('is_reprocessed', '=', True), ('statut', '!=', 'state_send_response_bpo' )]}" bg_color="bg-warning"/>
+          
           <!--RIBBON du ticket traité au niveau bpo-->
           <widget name="web_ribbon" text="TRAITÉ" attrs="{'invisible': [('statut', '!=', 'state_done_bpo')]}" bg_color="bg-success"/>
 
-          <!--RIBBON du ticket fermé-->
-          <widget name="web_ribbon" text="FERMÉ" attrs="{'invisible': [('statut', '!=', 'state_closed_prea')]}" bg_color="bg-primary"/>
-
-          <!--RIBBON du ticket en cours de traitement-->
-          <widget name="web_ribbon" text="EN COURS" attrs="{'invisible': [('statut', 'in', ['state', 'state_closed_prea', 'state_done_bpo', 'state_invalid'])]}" bg_color="bg-warning"/>
-          
           <!-- Title -->
           <div class="oe_title" position="before">
             <span class="mgp_label" attrs="{'invisible': [('is_last_group_receiver', '!=', True)]}" icon="fa-group" />  
@@ -284,11 +284,11 @@
 
           <group>
             <field name="categorie_id" placeholder="Seléctionner la catégorie de plainte" 
-                options="{'no_create_edit': True, 'no_create': True, 'no_open': True}"
+                options="{'no_create_edit': True, 'no_create': True, 'no_open': True}" class="field_value_color"
                 attrs="{'readonly':['|', ('check_write', '=', True), ('statut', '!=', 'state')]}"/>
 
             <field name="ennonce" string="Plainte/Doléance" placeholder="Exposez ici l'ennoncé de la plainte" widget="html"
-              attrs="{'readonly':['|', ('check_write', '=', True), ('statut', '!=', 'state')]}" height="100"/>
+              attrs="{'readonly':['|', ('check_write', '=', True), ('statut', '!=', 'state')]}" height="50"/>
           </group>
 
           <notebook>
@@ -300,6 +300,8 @@
                   <field name="note" string="Notes" />
                   <field name="create_uid" string="Par" readonly="1" />
                   <field name="create_date" string="Le" readonly="1" />
+                  <field name="upload_file" filename="file_name"/>
+                  <field name="file_name" invisible="1"/>
                 </tree>
               </field>
             </page>
@@ -320,6 +322,9 @@
                 <tree editable="bottom">
                   <field name="plainte_id" invisible="1" />
                   <field name="reponse" class="field_value_color" />
+                  <field name="create_date" string="Le" readonly="1" />
+                  <field name="upload_file" filename="file_name" readonly="1"/>
+                  <field name="file_name" invisible="1"/>
                 </tree>
               </field>
             </page>
@@ -337,11 +342,11 @@
             </page>
           </notebook>
         </sheet>
-        <div class="oe_chatter">
+        <!-- <div class="oe_chatter">
           <field name="message_follower_ids" widget="mail_followers"/>
-          <!-- <field name="activity_ids" widget="mail_activity"/> -->
+          <field name="activity_ids" widget="mail_activity"/>
           <field name="message_ids" widget="mail_thread"/>
-        </div>
+        </div> -->
       </form>
     </field>
   </record>
@@ -385,29 +390,43 @@
                 </t>
                 
                 <ul>
-                  <li><span class="mgp_tel_label fa fa-phone"></span><field name="tel"/></li>
-                  <li><span class="mgp_label fa fa-clock-o"></span><field name="date_appel"/></li>
-                  <li><span class="mgp_label fa fa-map-marker"></span><field name="district_id"/></li>
+                  <li><span class="mgp_tel_label fa fa-phone"><field name="tel"/></span></li>
+                  <li><span class="mgp_label fa fa-clock-o"><field name="date_appel"/></span></li>
+                  <li><span class="mgp_label fa fa-map-marker"><field name="district_id"/></span></li>
                   <li>
                     <t t-if="record.statut.raw_value=='state_done_bpo'">
                       <div class="ribbon-success"><p>Traité</p></div>
                     </t>
                     <t t-elif="record.statut.raw_value=='state_closed_prea'">
-                      <div class="ribbon-secondary"><p>Fermé</p></div>
+                      <div class="ribbon-closed"><p>Fermé</p></div>
                     </t>
                     <t t-elif="record.statut.raw_value=='state_invalid'">
                       <div class="ribbon-danger"><p>Invalide</p></div>
                     </t>
                     <t t-elif="record.response_complete.raw_value">
-                      <div class="ribbon-info"><p>Réponse complète</p></div>
-                      <div class="ribbon-warning"><p>En cours</p></div>
+                      <t t-if="record.jours_traitement.raw_value>30">
+                        <div class="ribbon-response space_right" title="Réponse complète">R</div><div class="ribbon-warning space_right">En cours</div><div class="ribbon-days-warning"><field name="jours_traitement"/>j</div>
+                      </t>
+                      <t t-else="">
+                        <div class="ribbon-response space_right" title="Réponse complète">R</div><div class="ribbon-warning space_right">En cours</div><div class="ribbon-days"><field name="jours_traitement"/>j</div>                          
+                      </t>
                     </t>
                     <t t-elif="record.statut.raw_value!='state'">
                       <t t-if="record.is_reprocessed.raw_value">
-                        <div class="ribbon-warning"><p>En retraitement</p></div>
+                        <t t-if="record.jours_traitement.raw_value>30">
+                          <div class="ribbon-retraitement space_right">En retraitement</div><div class="ribbon-days-warning"><field name="jours_traitement"/>j</div>
+                        </t>
+                        <t t-else="">
+                          <div class="ribbon-retraitement space_right">En retraitement</div><div class="ribbon-days"><field name="jours_traitement"/>j</div>
+                        </t>
                       </t>
                       <t t-else="">
-                        <div class="ribbon-warning"><p>En cours</p></div>
+                        <t t-if="record.jours_traitement.raw_value>30">
+                          <div class="ribbon-warning space_right">En cours </div><div class="ribbon-days-warning"><field name="jours_traitement"/>j</div>
+                        </t>
+                        <t t-else="">
+                          <div class="ribbon-warning space_right">En cours </div><div class="ribbon-days"><field name="jours_traitement"/>j</div>
+                        </t>
                       </t>
                     </t>
                     <t t-elif="record.statut.raw_value=='state'">
