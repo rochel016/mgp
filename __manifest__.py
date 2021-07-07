@@ -6,7 +6,7 @@
         Le système Mécanisme de Gestion des Plaintes (MGP) permet de gérer les plaintes et doléances des émetteurs (citoyens),
         de façon accessible et pérenne.
     """,
-    #'category': '',
+    'category': 'gouvernance',
     'author': "UGD",
     'license': "AGPL-3", 
     'website': "https://digital.gov.mg/",
