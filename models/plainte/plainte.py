@@ -14,7 +14,16 @@ class Plainte(models.Model):
     _order = "date_appel desc"
     _rec_name = 'reference' # Sur la navigation 
 
-    reference = fields.Char(string="Plainte No", readonly=True, required=True, copy=False, default=NEW_TICKET)
+    def _init_lang(self):
+        if self.env.lang == 'mg_MG':
+            NEW_TICKET = 'VAOVAO'
+        elif self.env.lang == 'en_EN':
+            NEW_TICKET = 'NEW'
+        else:
+            NEW_TICKET = 'NOUVEAU'
+        return NEW_TICKET
+
+    reference = fields.Char(string="Plainte No", readonly=True, required=True, copy=False, default=_init_lang)
     date_appel = fields.Datetime(string="Date d'appel", required=True, default=lambda self: fields.datetime.now())
     date_event = fields.Datetime(string="Date d'événement")
     
@@ -223,6 +232,10 @@ class Plainte(models.Model):
         else:
             self.has_response = False
 
+    lang = fields.Char(compute='_get_lang')
+    def _get_lang(self):
+        self.lang = self.env.lang
+
     # -------------------------------------------------------
     # ----------------- GROUP Contraintes -------------------
     # -------------------------------------------------------
@@ -410,6 +423,7 @@ class Plainte(models.Model):
         - By BPO
         - Remarque: Référence auto-incrémenté et First Workflow
         """
+        # a = self.env.lang
 
         # 1 GET YOUR SEQUENCE WITH LATEST INCREMENT RUNNING NUMBER
         seq = self.env['ir.sequence'].next_by_code('mgp.plainte') or NEW_TICKET

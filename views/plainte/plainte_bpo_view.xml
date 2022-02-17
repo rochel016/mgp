@@ -79,7 +79,8 @@
       <form>
         <field name="response_complete" invisible="1"/> <!--IMPORTANT -->
         <field name="is_reprocessed" invisible="1"/> <!--IMPORTANT -->
-
+        <field name="lang" invisible="1"/> <!--IMPORTANT -->
+        
         <header>
           <!--Group receiver of current user ('is_last_group_receiver', '=', False) -->
           <field name="is_last_group_receiver" invisible="1" />
@@ -208,12 +209,15 @@
 
           <!--RIBBON du ticket nouveau-->
           <widget name="web_ribbon" text="NOUVEAU" attrs="{'invisible': [('statut', '!=', 'state')]}" bg_color="bg-dark"/>
+          <!-- <widget name="web_ribbon" text="VAOVAO" attrs="{'invisible': ['('statut', '!=', 'state'), ('lang', '!=', 'mg_MG')]}" bg_color="bg-dark"/> -->
           
           <!--RIBBON à traiter par BPO-->
-          <widget name="web_ribbon" text="EN TRAITEMENT" attrs="{'invisible': ['|', ('is_reprocessed', '=', True), ('statut', '!=', 'state_send_response_bpo' )]}" bg_color="bg-warning"/>
+          <widget name="web_ribbon" text="EN TRAITEMENT" attrs="{'invisible': ['|', ('is_reprocessed', '=', True), ('statut', '!=', 'state_send_response_bpo')]}" bg_color="bg-warning"/>
+          <!-- <widget name="web_ribbon" text="AM-PIKARAKARANA" attrs="{'invisible': ['|', ('is_reprocessed', '=', True), ('statut', '!=', 'state_send_response_bpo'), ('lang', '!=', 'mg_MG')]}" bg_color="bg-warning"/> -->
           
           <!--RIBBON du ticket traité au niveau bpo-->
           <widget name="web_ribbon" text="TRAITÉ" attrs="{'invisible': [('statut', '!=', 'state_done_bpo')]}" bg_color="bg-success"/>
+          <!-- <widget name="web_ribbon" text="VOAKARAKARA" attrs="{'invisible': ['|', ('statut', '!=', 'state_done_bpo'), ('lang', '!=', 'mg_MG')]}" bg_color="bg-success"/> -->
 
           <!-- Title -->
           <div class="oe_title" position="before">
@@ -225,7 +229,6 @@
           <!-- Fields -->
           <group>
             <group>
-
               <!--Si avoir droit de modifier certains champs (voir field/méthode dans plainte.py: _check_write )-->
               <field name="check_write" invisible="1" />
 

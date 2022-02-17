@@ -97,6 +97,7 @@
         <field name="situation" invisible="1"/> <!--IMPORTANT -->
         <field name="is_reprocessed" invisible="1"/> <!--IMPORTANT -->
         <field name="reprocessed_display" invisible="1"/> <!--IMPORTANT -->
+        <field name="lang" invisible="1"/> <!--IMPORTANT -->
         
         <!--Si avoir droit de modifier certains champs (voir field/méthode dans plainte.py: _check_write )-->
         <field name="check_write" invisible="1" />
@@ -111,7 +112,7 @@
           <!--RENVOYER LE TICKET AU BPO POUR CAUSE DE MAUVAISE INFO FOURNIR-->
           <button name="action_return_ticket_to_bpo" type="object" class="btn btn-warning"
             string="Renvoyer ticket au BPO"
-            confirm="Voulez vous renvoyer ce tiket au BPO (cause: mauvaise information fournie par BPO) ?"
+            confirm="Voulez vous renvoyer ce ticket au BPO (cause: mauvaise information fournie par BPO) ?"
             statuts="state_validate_prea"
             attrs="{'invisible': [('statut', '!=', 'state_validate_prea')]}"/>
 
@@ -257,13 +258,22 @@
 
           <!--RIBBON du ticket en cours de traitement-->
           <!-- <widget name="web_ribbon" text="EN COURS" attrs="{'invisible': ['|', ('is_reprocessed', '=', True), ('statut', 'in', ['state_closed_prea', 'state_done_bpo', 'state_invalid'])]}" bg_color="bg-warning"/>-->
-          <widget name="web_ribbon" text="À VALIDER PREA" attrs="{'invisible': ['|', ('is_reprocessed', '=', True), ('statut', '!=', 'state_validate_prea' )]}" bg_color="bg-warning"/>
-          <widget name="web_ribbon" text="À TRAITER PMO" attrs="{'invisible': ['|', ('is_reprocessed', '=', True), ('statut', '!=', 'state_traitement_pmo' )]}" bg_color="bg-warning"/>
-          <widget name="web_ribbon" text="À ÉVALUER PREA" attrs="{'invisible': ['|', ('is_reprocessed', '=', True), ('statut', '!=', 'state_eval_response_prea' )]}" bg_color="bg-warning"/>
-          <widget name="web_ribbon" text="À TRAITER BPO" attrs="{'invisible': ['|', ('is_reprocessed', '=', True), ('statut', '!=', 'state_send_response_bpo' )]}" bg_color="bg-warning"/>
+          <widget name="web_ribbon" text="À VALIDER PAR PREA" attrs="{'invisible': ['|', ('is_reprocessed', '=', True), ('statut', '!=', 'state_validate_prea')], 'required':[('lang', '=', 'fr_FR')]}" bg_color="bg-warning"/>
+          <widget name="web_ribbon" text="HAMARININ'NY PREA" attrs="{'invisible': ['|', ('is_reprocessed', '=', True), ('statut', '!=', 'state_validate_prea')], 'required':[('lang', '=', 'mg_MG')]}" bg_color="bg-warning"/>
+
+          <widget name="web_ribbon" text="À TRAITER PAR PMO" attrs="{'invisible': ['|', ('is_reprocessed', '=', True), ('statut', '!=', 'state_traitement_pmo')]}" bg_color="bg-warning"/>
+          <!-- <widget name="web_ribbon" text="KARAKARAIN'NY PMO" attrs="{'invisible': ['|', ('is_reprocessed', '=', True), ('statut', '!=', 'state_traitement_pmo'), ('lang', '!=', 'mg_MG')]}" bg_color="bg-warning"/> -->
+
+          <widget name="web_ribbon" text="À ÉVALUER PAR PREA" attrs="{'invisible': ['|', ('is_reprocessed', '=', True), ('statut', '!=', 'state_eval_response_prea')]}" bg_color="bg-warning"/>
+          <!-- <widget name="web_ribbon" text="DINIHIN'NY PREA" attrs="{'invisible': ['|', ('is_reprocessed', '=', True), ('statut', '!=', 'state_eval_response_prea'), ('lang', '!=', 'mg_MG')]}" bg_color="bg-warning"/> -->
+
+          <widget name="web_ribbon" text="À TRAITER BPO" attrs="{'invisible': ['|', ('is_reprocessed', '=', True), ('statut', '!=', 'state_send_response_bpo')]}" bg_color="bg-warning"/>
+          <!-- <widget name="web_ribbon" text="KARAKARAIN'NY BPO" attrs="{'invisible': ['|', ('is_reprocessed', '=', True), ('statut', '!=', 'state_send_response_bpo'), ('lang', '!=', 'mg_MG')]}" bg_color="bg-warning"/> -->
           
+
           <!--RIBBON du ticket en cours de RE-TRAITMEENT-->
           <widget name="web_ribbon" text="RETRAITEMENT" attrs="{'invisible': ['|', ('is_reprocessed', '=', False), ('statut', '=', 'state_closed_prea')]}" bg_color="bg-warning"/>
+          <!-- <widget name="web_ribbon" text="HAVERINA KARAKARAINA" attrs="{'invisible': ['|', ('is_reprocessed', '=', False), ('statut', '=', 'state_closed_prea'), ('lang', '!=', 'mg_MG')]}" bg_color="bg-warning"/> -->
 
           <!-- Title -->
           <div class="oe_title" position="before">
