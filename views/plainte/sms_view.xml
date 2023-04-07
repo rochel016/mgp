@@ -1,0 +1,47 @@
+<odoo>
+
+  <!-- explicit list view definition -->
+  <record id="sms_list_view" model="ir.ui.view">
+    <field name="name">Messages.list</field>
+    <field name="model">mgp.plainte_sms</field>
+    <field name="arch" type="xml">
+      <tree>
+        <field name="langue"/>
+        <field name="statut"/>
+         <field name="message"/>
+      </tree>
+    </field>
+  </record>
+
+  <!-- actions opening views on models -->
+  <record id="sms_form_view" model="ir.ui.view">
+    <field name="name">sms.form.view</field>
+    <field name="model">mgp.plainte_sms</field>
+    <field name="arch" type="xml">
+      <form>
+        <sheet>
+          <group>
+            <group>
+              <field name="langue" />
+            </group>
+            <group>
+              <field name="statut" />
+            </group>  
+          </group>
+          <group>
+            <field name="message" />
+            <label for="message" string="(160 caractères maximum)"/>
+          </group>
+        </sheet>
+      </form>
+    </field>
+  </record>
+
+  <!-- server action to the one above -->
+  <record model="ir.actions.act_window" id="sms_action_window">
+    <field name="name">Messages à envoyer aux citoyens</field>
+    <field name="res_model">mgp.plainte_sms</field>
+    <field name="view_mode">tree,form</field>
+  </record>
+
+</odoo>

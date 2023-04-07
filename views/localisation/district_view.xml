@@ -1,0 +1,40 @@
+<odoo>
+
+  <!-- explicit list view definition -->
+  <record id="district_list_view" model="ir.ui.view">
+    <field name="name">districts list</field>
+    <field name="model">mgp.loc_district</field>
+    <field name="arch" type="xml">
+      <tree>
+        <field name="name"/>
+        <field name="region_id"/>
+        <field name="description"/>
+      </tree>
+    </field>
+  </record>
+
+  <!-- actions opening views on models -->
+  <record id="district_form_view" model="ir.ui.view">
+    <field name="name">district.form.view</field>
+    <field name="model">mgp.loc_district</field>
+    <field name="arch" type="xml">
+      <form>
+        <group>
+          <group>
+            <field name="name" />
+            <field name="region_id"/>
+            <field name="description" />
+          </group>  
+        </group>
+      </form>
+    </field>
+  </record>
+
+  <!-- server action to the one above -->
+  <record model="ir.actions.act_window" id="district_action_window">
+    <field name="name">Districts</field>
+    <field name="res_model">mgp.loc_district</field>
+    <field name="view_mode">tree,form</field>
+  </record>
+
+</odoo>

@@ -1,0 +1,47 @@
+<odoo>
+
+  <!-- explicit list view definition -->
+  <record id="categorie_details_list_view" model="ir.ui.view">
+    <field name="name">categories.details.list</field>
+    <field name="model">mgp.plainte_categorie_details</field>
+    <field name="arch" type="xml">
+      <tree>
+        <field name="name"/>
+        <field name="categorie_id"/>
+        <field name="description"/>
+      </tree>
+    </field>
+  </record>
+
+  <!-- actions opening views on models -->
+  <record id="categorie_details_form_view" model="ir.ui.view">
+    <field name="name">categorie.details.form.view</field>
+    <field name="model">mgp.plainte_categorie_details</field>
+    <field name="arch" type="xml">
+      <form>
+        <sheet>
+          <div class="oe_title">
+            <label for="name" class="oe_edit_only" string="Nom de la sous catégorie de plainte" />
+            <h1>
+              <field name="name" />
+            </h1>
+          </div> 
+          <group>
+            <group>
+              <field name="categorie_id"/>
+              <field name="description" />
+            </group>  
+          </group>
+        </sheet>
+      </form>
+    </field>
+  </record>
+
+  <!-- server action to the one above -->
+  <record model="ir.actions.act_window" id="categorie_details_action_window">
+    <field name="name">Catégories details (faits/actions)</field>
+    <field name="res_model">mgp.plainte_categorie_details</field>
+    <field name="view_mode">tree,form</field>
+  </record>
+
+</odoo>

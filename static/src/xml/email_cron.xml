@@ -1,0 +1,31 @@
+<odoo>
+    <data noupdate="1">
+        <record id="mgp_email_scheduler_prea" model="ir.cron">
+            <field name="name">Send email to PREA scheduler</field>
+            <field name="active"/>
+            <field name="model">mgp.plainte</field>
+            <!-- <field name="user_id" ref="base.user_root" /> -->
+            <field name="function">send_email_prea_job</field>
+            <field name="interval_type">days</field>
+            <field name="numbercall">-1</field>
+            <field name="priority">5</field>
+            <field name="doall">False</field>
+            <field name="active">True</field>
+            <field name="interval_number">1</field>
+        </record>
+
+        <record id="mgp_email_scheduler_pmo" model="ir.cron">
+            <field name="name">Send email to PMO scheduler</field>
+            <field name="active"/>
+            <field name="model">mgp.plainte</field>
+            <!-- <field name="user_id" ref="base.user_root" /> -->
+            <field name="function">send_email_pmo_job</field>
+            <field name="interval_type">days</field>
+            <field name="numbercall">-1</field>
+            <field name="priority">5</field>
+            <field name="doall">False</field>
+            <field name="active">True</field>
+            <field name="interval_number">1</field>
+        </record>
+    </data>
+</odoo>

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <report 
+        id="report_ticket"
+        string="Tiket report"
+        model="mgp.plainte"
+        report_type="qweb-pdf"
+        name="mgp.report_ticket"
+        file="mgp.report_ticket"
+    />
+    
+
+</odoo>

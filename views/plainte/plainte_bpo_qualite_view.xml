@@ -1,0 +1,512 @@
+<odoo>
+  <record id="plainte_bpo_qualite_search_view" model="ir.ui.view">
+    <field name="name">plainte.bpo.view.search</field>
+    <field name="model">mgp.plainte</field>
+    <field name="arch" type="xml">
+      <search string="Recherche des tickets">
+        <field name="reference" string="Ticket n°"/>
+        <field name="date_appel"/>
+
+        <separator string="Statut"/>
+        <filter string='Tickets créés' name='state' domain="[('statut', '=', 'state')]"/>
+        <filter string='Tickets à traiter' name='state_send_response_bpo' domain="[('statut', '=', 'state_send_response_bpo')]"/>
+        <filter string='Ticktes traités' name='state_done_bpo' domain="[('statut', '=', 'state_done_bpo')]"/>
+        <filter string='Tickets invalides' name='state_invalid' domain="[('statut', '=', 'state_invalid')]"/>
+
+        <separator string="Situation"/>
+        <filter string='Joignable' name='Joignable' domain="[('situation', '=', 'joignable')]"/>
+        <filter string='Injoignable' name='Injoignable' domain="[('situation', '=', 'injoignable')]"/>
+
+        <separator string="Résultat"/>
+        <filter string='Satisfait' name='Satisfait' domain="[('resultat', '=', 'satisfait')]"/>
+        <filter string='Non satisfait' name='insatisfait' domain="[('resultat', '=', 'insatisfait')]"/>
+
+        <group expand="0" string="Group By">
+          <filter string='Statut' name='statut' context="{'group_by':'statut'}"/>
+          <filter string='Situation' name='situation' context="{'group_by':'situation'}"/>
+          <filter string='Resultat' name='resultat' context="{'group_by':'resultat'}"/>
+        </group>
+      </search>
+    </field>
+  </record>
+
+  <!-- explicit list view definition -->
+  <record id="plainte_bpo_qualite_list_view" model="ir.ui.view">
+    <field name="name">Plaintes.list</field>
+    <field name="model">mgp.plainte</field>
+    <field name="arch" type="xml">
+      <tree>
+        <field name="reference" string="Ticket" decoration-bf="id > 0"/>
+        <field name="date_appel" />
+        <field name="zone" string="Localisation"/>
+        <field name="jours_traitement" string="Nbr-jour(s)"/>
+        <field name="statut" 
+          decoration-warning="statut == 'state'" 
+          decoration-info="statut == 'state_validate_prea'"
+          decoration-primary="statut == 'state_traitement_pmo'"
+          decoration-it="statut == 'state_eval_response_prea'"
+          decoration-muted="statut == 'state_send_response_bpo'"
+          decoration-success="statut == 'state_done_bpo'"
+          decoration-danger="statut == 'state_invalid'"
+          decoration-bf="id > 0"/>
+      </tree>
+    </field>
+  </record>
+
+  <!-- actions opening views on models -->
+  <record id="plainte_bpo_qualite_form_view" model="ir.ui.view">
+    <field name="name">plainte.form.view</field>
+    <field name="model">mgp.plainte</field>
+    <field name="arch" type="xml">
+      <form>
+        <field name="response_complete" invisible="1"/> <!--IMPORTANT -->
+        <field name="is_reprocessed" invisible="1"/> <!--IMPORTANT -->
+
+        <header>
+          <!--Group receiver of current user ('is_last_group_receiver', '=', False) -->
+          <field name="is_last_group_receiver" invisible="1" />
+
+          <!-- Status bar -->
+          <field name='statut' widget='statusbar' clickable="True" 
+            statusbar_visible='state,state_validate_prea,state_traitement_pmo,state_eval_response_prea,state_send_response_bpo,state_done_bpo,state_invalid,state_closed_prea'/>
+        </header>
+
+        <sheet>
+          <!-- Widget statinfo -->
+          <div class="oe_button_box" name="button_box">
+            <!-- Résultat -->
+            <button name="get_result" type="object" class="oe_stat_button" icon="fa-thumbs-o-up text-success" style="width: 100px"
+              attrs="{'invisible': [('resultat', '!=', 'satisfait')]}">
+              <field name="result_display" widget="statinfo"/>
+            </button>
+
+            <button name="get_result" type="object" class="oe_stat_button" icon="fa-thumbs-o-down text-warning" style="width: 100px"
+              attrs="{'invisible': [('resultat', '!=', 'insatisfait')]}">
+              <field name="result_display" widget="statinfo"/>
+            </button>
+
+            <!-- Situation -->
+            <button name="get_situation" type="object" class="oe_stat_button" icon="fa-phone text-success" style="width: 12na0px"
+              attrs="{'invisible': [('situation', '!=', 'joignable')]}">
+              <field name="situation_display" widget="statinfo"/>
+            </button>
+
+            <button name="get_situation" type="object" class="oe_stat_button" icon="fa-phone text-warning" style="width: 120px"
+              attrs="{'invisible': [('situation', '!=', 'injoignable')]}">
+              <field name="situation_display" widget="statinfo"/>
+            </button>
+
+            <!-- Nombre de jours de traitement -->
+            <button name="get_jours_traitement" type="object" class="oe_stat_button" icon="fa-calendar text-warning" style="width: 200px">
+              <field name="jours_traitement" widget="statinfo"/>
+            </button>
+
+            <!-- Status de réponse -->
+            <button name="check_response" type="object" class="oe_stat_button" icon="fa-inbox text-info" style="width: 200px"
+              attrs="{'invisible': [('response_complete', '=', False)]}">
+              <field name="statut_response_display" string="Reponse envoyée" widget="statinfo"/>
+            </button>
+
+            <!-- Status du ticket -->
+            <button name="get_statut" type="object" class="oe_stat_button" icon="fa-battery-quarter text-info"
+              style="width: 200px" attrs="{'invisible': [('statut', '!=', 'state')]}">
+              <field name="statut_display" widget="statinfo" clickable="False"/>
+            </button>
+
+            <button name="get_statut" type="object" class="oe_stat_button" icon="fa-battery-three-quarters text-info" 
+                style="width: 200px" attrs="{'invisible': [('statut', '!=', 'state_validate_prea')]}">
+              <field name="statut_display" widget="statinfo"/>
+            </button>
+
+            <button name="get_statut" type="object" class="oe_stat_button" icon="fa-battery-three-quarters text-info" 
+                style="width: 200px" attrs="{'invisible': [('statut', '!=', 'state_traitement_pmo')]}">
+              <field name="statut_display" widget="statinfo"/>
+            </button>
+
+            <button name="get_statut" type="object" class="oe_stat_button" icon="fa-battery-three-quarters text-info" 
+                style="width: 200px" attrs="{'invisible': [('statut', '!=', 'state_eval_response_prea')]}">
+              <field name="statut_display" widget="statinfo"/>
+            </button>
+
+            <button name="get_statut" type="object" class="oe_stat_button" icon="fa-battery-three-quarters text-info" 
+                style="width: 200px" attrs="{'invisible': [('statut', '!=', 'state_send_response_bpo')]}">
+              <field name="statut_display" widget="statinfo"/>
+            </button>
+
+            <button name="get_statut" type="object" class="oe_stat_button" icon="fa-battery-full text-success" 
+              style="width: 200px" attrs="{'invisible': [('statut', '!=', 'state_done_bpo')]}">
+              <field name="statut_display" widget="statinfo"/>
+            </button>
+
+            <button name="get_statut" type="object" class="oe_stat_button" icon="fa-window-close text-primary" 
+              style="width: 200px" attrs="{'invisible': [('statut', '!=', 'state_closed_prea')]}">
+              <field name="statut_display" widget="statinfo"/>
+            </button>
+            
+            <button name="get_statut" type="object" class="oe_stat_button" icon="fa-ban text-danger" 
+                style="width: 200px" attrs="{'invisible': [('statut', '!=', 'state_invalid')]}">
+                <field name="statut_display" widget="statinfo"/>
+            </button>
+
+            <!-- Group Receiver actuel-->
+            <button name="get_actual_group_name" type="object" class="oe_stat_button" icon="fa-group text-danger" style="width: 200px">
+              <field name="actual_group_name" widget="statinfo"/>
+            </button>
+          </div>
+
+          <!--RIBBON du ticket nouveau-->
+          <widget name="web_ribbon" text="NOUVEAU" attrs="{'invisible': [('statut', '!=', 'state')]}" bg_color="bg-dark"/>
+          
+          <!--RIBBON à traiter par BPO-->
+          <widget name="web_ribbon" text="EN TRAITEMENT" attrs="{'invisible': ['|', ('is_reprocessed', '=', True), ('statut', '!=', 'state_send_response_bpo' )]}" bg_color="bg-warning"/>
+          
+          <!--RIBBON du ticket traité au niveau bpo-->
+          <widget name="web_ribbon" text="TRAITÉ" attrs="{'invisible': [('statut', '!=', 'state_done_bpo')]}" bg_color="bg-success"/>
+
+          <!--RIBBON du ticket invalide-->
+          <widget name="web_ribbon" text="HORS PÉRIMÈTRE" attrs="{'invisible': [('statut', '!=', 'state_invalid')]}" bg_color="bg-danger"/>
+          <widget name="web_ribbon" text="INJOIGNABLE" attrs="{'invisible': [('situation', '!=', 'injoignable')]}" bg_color="bg-danger"/>
+        
+          <!-- Title -->
+          <div class="oe_title" position="before">
+            <span class="mgp_label" attrs="{'invisible': [('is_last_group_receiver', '!=', True)]}" icon="fa-group" />  
+            <label for="reference" string="Ticket n°" />
+            <h1><field name="reference"/></h1>
+          </div>
+
+          <!-- Fields -->
+          <group>
+            <group>
+
+              <!--Si avoir droit de modifier certains champs (voir field/méthode dans plainte.py: _check_write )-->
+              <field name="check_write" invisible="1" />
+
+              <!--Si avoir droit de modifier les 2 champs (voir field/méthode dans plainte.py: _check_write_response )-->
+              <field name="check_write_response" invisible="1" />
+
+              <!--Si avoir droit de modifier la situation ainsi que le résultat-->
+              <field name="check_write_resultat_situation" invisible="1" />
+
+              <field name="date_appel" autocomplete="off"
+                attrs="{'readonly':['|', ('check_write', '=', True), ('statut', '!=', 'state')]}"/>
+
+              <field name="date_event" autocomplete="off"
+                attrs="{'readonly':['|', ('check_write', '=', True), ('statut', '!=', 'state')]}"/>
+
+              <field name="genre" placeholder="Seléctionner le genre" 
+                attrs="{'readonly':['|', ('check_write', '=', True), ('statut', '!=', 'state')]}"/>
+
+              <field name="education_id" placeholder="Seléctionner le niveau d'éducation"
+                options="{'no_create_edit': True, 'no_create': True, 'no_open': True}"
+                attrs="{'readonly':['|', ('check_write', '=', True), ('statut', '!=', 'state')]}"/>
+
+              <field name="tranche_id" placeholder="Seléctionner la tranche d'âge"
+                options="{'no_create_edit': True, 'no_create': True, 'no_open': True}"
+                attrs="{'readonly':['|', ('check_write', '=', True), ('statut', '!=', 'state')]}"/>
+              
+              <field name="langue" placeholder="Seléctionner la langue" 
+                attrs="{'readonly':['|', ('check_write', '=', True), ('statut', '!=', 'state')]}"/>
+            </group>
+
+            <group>
+              <field name="tel" placeholder="Champs téléphone multiple séparé par point virgule" style="color:Blue;" 
+               attrs="{'readonly':[('statut', '!=', 'state')]}" autocomplete="off"/>
+
+              <field name="region_id" placeholder="Seléctionner la région"
+                options="{'no_create_edit': True, 'no_create': True, 'no_open': True}" 
+                attrs="{'readonly':['|', ('check_write', '=', True), ('statut', '!=', 'state')]}"/>
+
+              <field name="district_id" placeholder="Seléctionner le district"
+                options="{'no_create_edit': True, 'no_create': True, 'no_open': True}" 
+                attrs="{'readonly':['|', ('check_write', '=', True), ('statut', '!=', 'state')]}"/>
+
+              <field name="commune_id" placeholder="Seléctionner la commune"
+                options="{'no_create_edit': True, 'no_create': True, 'no_open': True}" 
+                attrs="{'readonly':['|', ('check_write', '=', True), ('statut', '!=', 'state')]}"/>
+              
+              <field name="fokontany_id" placeholder="Seléctionner le fokontany (facultatif)"
+                options="{'no_create_edit': True, 'no_create': True, 'no_open': True}"
+                attrs="{'readonly':['|', ('check_write', '=', True), ('statut', '!=', 'state')]}"/>
+              
+              <field name="composante_id" placeholder="Seléctionner la composante de la plainte"
+                options="{'no_create_edit': True, 'no_create': True, 'no_open': True}"
+                attrs="{'readonly':['|', ('check_write', '=', True), ('statut', '!=', 'state')]}"/>
+            </group>
+          </group>
+
+          <group>
+            <field name="categorie_id" placeholder="Seléctionner la catégorie de plainte" 
+                options="{'no_create_edit': True, 'no_create': True, 'no_open': True}" class="field_value_color"
+                attrs="{'readonly':['|', ('check_write', '=', True), ('statut', '!=', 'state')]}"/>
+
+            <field name="ennonce" string="Plainte/Doléance" placeholder="Exposez ici l'ennoncé de la plainte" widget="html"
+              attrs="{'readonly':['|', ('check_write', '=', True), ('statut', '!=', 'state')]}" height="50"/>
+          </group>
+
+          <notebook>
+            <page name="Notes" string="Notes">
+              <field name="note_ids" context="{'default_plainte_id':active_id}" widget="one2many_list" 
+                attrs="{'readonly':[('statut', 'in', ['state_invalid','state_closed_prea'])]}">
+                <tree editable="bottom" >
+                  <field name="plainte_id" invisible="1"/>
+                  <field name="note" string="Notes" />
+                  <field name="create_uid" string="Par" readonly="1" />
+                  <field name="create_date" string="Le" readonly="1" />
+                  <field name="upload_file" filename="file_name"/>
+                  <field name="file_name" invisible="1"/>
+                </tree>
+              </field>
+            </page>
+            
+            <page name="Situation" string="Situation et Résultat" attrs="{'invisible': [('statut', '!=', 'state_done_bpo')]}">
+              <group>
+                <group>
+                  <field name="situation" string="Situation" readonly="1"/>
+                </group>
+                <group>
+                  <field name="resultat" string="Résultat" readonly="1"/>
+                </group>
+              </group>
+            </page>
+
+            <page name="Responses" string="Réponse (PMO)" attrs="{'invisible': [('response_complete', '=', False)]}">
+              <field name="reponse_ids" context="{'default_plainte_id':active_id}" widget="one2many_list">
+                <tree editable="bottom">
+                  <field name="plainte_id" invisible="1" />
+                  <field name="reponse" class="field_value_color" />
+                  <field name="create_date" string="Le" readonly="1" />
+                  <field name="upload_file" filename="file_name" readonly="1"/>
+                  <field name="file_name" invisible="1"/>
+                </tree>
+              </field>
+            </page>
+            
+            <page name="Audit" string="Audit">
+              <field name="log_ids" widget="many2many_list">
+                <tree editable="bottom">
+                  <field name="create_date" string="Date"/>
+                  <field name="statut" string="Statut"/>
+                  <field name="action"/>
+                  <field name="group_sender_id" string="Par"/>
+                  <field name="create_uid" string="Responsable"/>
+                </tree>
+              </field>
+            </page>
+          </notebook>
+        </sheet>
+        <!-- <div class="oe_chatter">
+          <field name="message_follower_ids" widget="mail_followers"/>
+          <field name="activity_ids" widget="mail_activity"/>
+          <field name="message_ids" widget="mail_thread"/>
+        </div> -->
+      </form>
+    </field>
+  </record>
+
+  <!-- View kanban -->
+  <record id="plainte_bpo_qualite_kanban_view" model="ir.ui.view">
+    <field name="name">plainte.kanban.view</field>
+    <field name="model">mgp.plainte</field>
+    <field name="arch" type="xml">
+      <kanban default_group_by="statut" quick_create="false" group_create="false" class="o_kanban_project_tasks" nolabel="1">
+        <field name="genre" /><!--Important-->
+        <field name="is_last_group_receiver"/>
+        <field name="statut"/>
+        <field name="response_complete"/>
+        <field name="is_reprocessed" />
+
+        <!-- Optional progress bar -->
+        <progressbar
+            field="statut"
+            colors='{"state": "warning",
+                    "state_validate_prea": "primary",
+                    "state_eval_response_prea": "primary",
+                    "state_send_response_bpo": "primary",
+                    "state_done_bpo": "success",
+                    "state_closed_prea": "primary",
+                    "state_invalid": "danger"}'/>
+
+        <templates>
+          <t t-name="kanban-box">
+            <div class="oe_kanban_global_click mgp_kanban_tasks_ext" style="background-color: #EAF7F3;">
+              <t t-if="record.genre.raw_value=='masculin'">
+                <img class="o_kanban_image" alt="profile_male" t-att-src='_s + "/mgp/static/src/img/profile_male.png"' width="24"/>  
+              </t>
+              <t t-else="">
+                <img class="o_kanban_image" alt="profile_female" t-att-src='_s + "/mgp/static/src/img/profile_female.png"' width="24"/>
+              </t>
+              <div class="oe_kanban_details"> 
+                <div class="o_kanban_tags_section"/>
+
+                <t t-if="record.user_pmo_name.raw_value">
+                  <strong class="space_right"><field name="reference"/></strong>- <div class="kanban-ribbon-pmo"><p><field name="user_pmo_name"/></p></div>
+                </t>
+                <t t-else="">
+                  <strong><field name="reference"/></strong>
+                </t>
+                
+                <ul>
+                  <li><span class="mgp_tel_label fa fa-phone"><field name="tel" attrs="{'invisible': True}"/></span></li>
+                  <li><span class="mgp_label fa fa-clock-o"><field name="date_appel"/></span></li>
+                  <li><span class="mgp_label fa fa-map-marker"><field name="district_id"/></span></li>
+                  <li>
+                    <t t-if="record.statut.raw_value=='state_done_bpo'">
+                      <div class="ribbon-success"><p>Traité</p></div>
+                    </t>
+                    <t t-elif="record.statut.raw_value=='state_closed_prea'">
+                      <div class="ribbon-closed"><p>Fermé</p></div>
+                    </t>
+                    <t t-elif="record.statut.raw_value=='state_invalid'">
+                      <t t-if="record.response_complete.raw_value">
+                        <div class="ribbon-danger"><p>Injoignable</p></div>
+                      </t> 
+                      <t t-else="">
+                        <div class="ribbon-danger"><p>Hors périmetre</p></div>
+                      </t>
+                    </t>
+                    <t t-elif="record.response_complete.raw_value">
+                      <t t-if="record.jours_traitement.raw_value>30">
+                        <div class="ribbon-response space_right" title="Réponse complète">R</div><div class="ribbon-warning space_right">En cours</div><div class="ribbon-days-warning"><field name="jours_traitement"/>j</div>
+                      </t>
+                      <t t-else="">
+                        <div class="ribbon-response space_right" title="Réponse complète">R</div><div class="ribbon-warning space_right">En cours</div><div class="ribbon-days"><field name="jours_traitement"/>j</div>                          
+                      </t>
+                    </t>
+                    <t t-elif="record.statut.raw_value!='state'">
+                      <t t-if="record.is_reprocessed.raw_value">
+                        <t t-if="record.jours_traitement.raw_value>30">
+                          <div class="ribbon-retraitement space_right">En retraitement</div><div class="ribbon-days-warning"><field name="jours_traitement"/>j</div>
+                        </t>
+                        <t t-else="">
+                          <div class="ribbon-retraitement space_right">En retraitement</div><div class="ribbon-days"><field name="jours_traitement"/>j</div>
+                        </t>
+                      </t>
+                      <t t-else="">
+                        <t t-if="record.jours_traitement.raw_value>30">
+                          <div class="ribbon-warning space_right">En cours </div><div class="ribbon-days-warning"><field name="jours_traitement"/>j</div>
+                        </t>
+                        <t t-else="">
+                          <div class="ribbon-warning space_right">En cours </div><div class="ribbon-days"><field name="jours_traitement"/>j</div>
+                        </t>
+                      </t>
+                    </t>
+                    <t t-elif="record.statut.raw_value=='state'">
+                      <div class="ribbon-dark"><p>Nouveau</p></div>
+                    </t>
+                  </li>
+                </ul>
+              </div>
+            </div>
+            <br/><br/>
+          </t>
+        </templates>
+      </kanban>
+    </field>
+  </record>
+
+  <!-- View Calendar -->
+  <record id="plainte_bpo_qualite_calendar_view" model="ir.ui.view">
+    <field name="name">plainte.calendar.view</field>
+    <field name="model">mgp.plainte</field>
+    <field name="arch" type="xml">
+      <calendar string="Tickets" date_start="date_appel" mode="month" color="commune_id" quick_add="False"> 
+        <field name="reference" string="N°"/>
+        <field name="categorie_id" options="{'no_open': True, 'no_create': True}"/>
+        <field name="statut" class="text-warning"/>
+        <field name="jours_traitement"/>
+        <field name="tel" attrs="{'invisible': True}"/>
+      </calendar>
+    </field>
+  </record>
+
+  <!-- View Graph -->
+  <record id="plainte_bpo_qualite_graph_view" model="ir.ui.view">
+    <field name="name">plainte.graph.view</field>
+    <field name="model">mgp.plainte</field>
+    <field name="arch" type="xml">
+      <graph string="Par statut" type="pie"> <!--line, pie stacked="True"-->
+        <field name="categorie_id"/>
+        <field name="statut" type="row"/>    <!--row-->
+      </graph>
+    </field>
+  </record>
+
+  <!-- View Pivot -->
+  <record id="plainte_bpo_qualite_pivot_view" model="ir.ui.view">
+    <field name="name">plainte.pivot.view</field>
+    <field name="model">mgp.plainte</field>
+    <field name="arch" type="xml">
+      <pivot string="Par statut">
+        <field name="education_id" type="col"/>
+        <field name="genre" type="col"/>
+        <field name="statut" type="col"/>
+        <field name="categorie_id" type="row"/>
+      </pivot>
+    </field>
+  </record>
+
+  <!-- server action to the one above -->
+  <record id="plainte_bpo_qualite_action_window" model="ir.actions.act_window">
+    <field name="name">Gestion et Suivi des plaintes</field>
+    <field name="res_model">mgp.plainte</field>
+    <field name="view_mode">kanban,tree,calendar,form,graph,pivot</field>
+    <field name="search_view_id" ref="plainte_bpo_qualite_search_view"/>
+    <field name="domain">[('statut','in',['state', 'state_validate_prea', 'state_eval_response_prea', 'state_send_response_bpo', 'state_done_bpo', 'state_closed_prea', 'state_invalid']) ]</field>
+    <field name="help" type="html">
+      <p class="o_view_nocontent_smiling_face">
+        Démander aux opérateurs de créer au moins un ticket (plainte)
+      </p><p>
+        Une plainte pourrait être émise par tout opérateur acteur lié directement 
+        ou indirectement dans la mise en œuvre du projet, en particulier par un citoyen.
+      </p>
+    </field>
+  </record>
+
+  <!-- My Specific kanban: plainte_bpo_qualite_kanban_view -->
+  <record model="ir.actions.act_window.view" id="bpo_qualite_action_window_kanban">
+    <field eval="1" name="sequence"/>
+    <field name="view_mode">kanban</field>
+    <field name="view_id" ref="plainte_bpo_qualite_kanban_view"/>
+    <field name="act_window_id" ref="plainte_bpo_qualite_action_window"/>
+  </record>
+
+  <!-- My Specific Tree: plainte_bpo_qualite_list_view -->
+  <record model="ir.actions.act_window.view" id="bpo_qualite_action_window_tree">
+    <field eval="2" name="sequence"/>
+    <field name="view_mode">tree</field>
+    <field name="view_id" ref="plainte_bpo_qualite_list_view"/>
+    <field name="act_window_id" ref="plainte_bpo_qualite_action_window"/>
+  </record>
+
+  <!-- My Specific Calendar: plainte_bpo_qualite_list_view -->
+  <record model="ir.actions.act_window.view" id="bpo_qualite_action_window_calendar">
+    <field eval="3" name="sequence"/>
+    <field name="view_mode">calendar</field>
+    <field name="view_id" ref="plainte_bpo_qualite_calendar_view"/>
+    <field name="act_window_id" ref="plainte_bpo_qualite_action_window"/>
+  </record>
+
+  <!-- My Specific Form: plainte_bpo_qualite_form_view -->
+  <record model="ir.actions.act_window.view" id="bpo_qualite_action_window_form">
+    <field eval="4" name="sequence"/>
+    <field name="view_mode">form</field>
+    <field name="view_id" ref="plainte_bpo_qualite_form_view"/>
+    <field name="act_window_id" ref="plainte_bpo_qualite_action_window"/>
+  </record>
+
+  <!-- My Specific Form: plainte_bpo_qualite_graph_view -->
+  <record model="ir.actions.act_window.view" id="bpo_qualite_action_window_graph">
+    <field eval="5" name="sequence"/>
+    <field name="view_mode">graph</field>
+    <field name="view_id" ref="plainte_bpo_qualite_graph_view"/>
+    <field name="act_window_id" ref="plainte_bpo_qualite_action_window"/>
+  </record>
+
+  <!-- My Specific Form: plainte_bpo_qualite_pivot_view -->
+  <record model="ir.actions.act_window.view" id="bpo_qualite_action_window_pivot">
+    <field eval="6" name="sequence"/>
+    <field name="view_mode">pivot</field>
+    <field name="view_id" ref="plainte_bpo_qualite_pivot_view"/>
+    <field name="act_window_id" ref="plainte_bpo_qualite_action_window"/>
+  </record>
+</odoo>

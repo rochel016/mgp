@@ -1,0 +1,189 @@
+<odoo>
+    <!--Kanban-->
+    <record id="plainte_prea_kanban_view_board" model="ir.ui.view">
+        <field name="name">plainte.kanban.view</field>
+        <field name="model">mgp.custom_dashboard</field>
+        <field name="arch" type="xml">
+            <kanban class="oe_background_grey o_kanban_dashboard o_project_kanban">
+                <field name="category"/>
+                <field name="color"/>
+                <field name="bgcolor"/>
+                <templates>
+                    <t t-name="kanban-box">
+                        <div class="mgp_kanban_analyse" t-attf-style="background-color: #{record.bgcolor.value};">
+                            <center>
+                                <t t-if="record.category.raw_value=='A'">
+                                    <!-- <h1><i class="fa fa-file" role="img"/></h1> -->
+                                    <h1><em><field name="total_citoyens"/></em> - <field name="name"/></h1>
+                                </t>
+                                <t t-if="record.category.raw_value=='B'">
+                                    <!-- <h1><i class="fa fa-female" t-attf-style="color: #{record.color.value};" role="img"/></h1> -->
+                                    <h1><em><field name="total_femmes"/></em> - <field name="name"/></h1>
+                                </t>
+                                <t t-if="record.category.raw_value=='C'">
+                                    <!-- <h1><i class="fa fa-male" t-attf-style="color: #{record.color.value};" role="img"/></h1> -->
+                                    <h1><em><field name="total_hommes"/></em> - <field name="name"/></h1>
+                                </t>
+                                <t t-if="record.category.raw_value=='D'">
+                                    <!-- <h1><i class="fa fa-child" t-attf-style="color: #{record.color.value};" role="img"/></h1> -->
+                                    <h1><em><field name="total_mineurs"/></em> - <field name="name"/></h1>
+                                </t>
+                                <t t-if="record.category.raw_value=='E'">
+                                    <!-- <h1><i class="fa fa-child" t-attf-style="color: #{record.color.value};" role="img"/></h1> -->
+                                    <h1><em><field name="total_majeurs"/></em> - <field name="name"/></h1>
+                                </t>
+                                <t t-if="record.category.raw_value=='F'">
+                                    <!-- <h1><i class="fa fa-check" t-attf-style="color: #{record.color.value};" role="img"/></h1> -->
+                                    <h1><em><field name="total_traites"/></em> - <field name="name"/></h1>
+                                </t>
+                                <t t-if="record.category.raw_value=='G'">
+                                    <!-- <h1><i class="fa fa-tasks" t-attf-style="color: #{record.color.value};" role="img"/></h1> -->
+                                    <h1><em><field name="total_currents"/></em> - <field name="name"/></h1>
+                                </t>
+                                <t t-if="record.category.raw_value=='H'">
+                                    <!-- <h1><i class="fa fa-thumbs-up" t-attf-style="color: #{record.color.value};" role="img"/></h1> -->
+                                    <h1><em><field name="total_satisfaits"/></em> - <field name="name"/></h1>
+                                </t>
+                                <t t-if="record.category.raw_value=='I'">
+                                    <!-- <h1><i class="fa fa-thumbs-down" t-attf-style="color: #{record.color.value};" role="img"/></h1> -->
+                                    <h1><em><field name="total_in_satisfaits"/></em> - <field name="name"/></h1>
+                                </t>
+                                <t t-if="record.category.raw_value=='J'">
+                                    <!-- <h1><i class="fa fa-phone" t-attf-style="color: #{record.color.value};" role="img"/></h1> -->
+                                    <h1><em><field name="total_injoignables"/></em> - <field name="name"/></h1>
+                                </t>
+                            </center>
+                        </div> 
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+    
+    <record id="prea_act_plainte_mgp_kanban" model="ir.actions.act_window">
+        <field name="name">Récapitulatifs des plaintes</field>
+        <field name="res_model">mgp.custom_dashboard</field>
+        <field name="view_mode">kanban</field>
+        <field name="view_id" ref="mgp.plainte_prea_kanban_view_board"/>
+    </record>
+
+    <!--TCD-->
+    <record id="prea_act_plainte_mgp_pivot" model="ir.actions.act_window">
+        <field name="name">Plaintes des citoyens</field>
+        <field name="res_model">mgp.plainte</field>
+        <field name="view_mode">pivot</field>
+        <field name="view_id" ref="mgp.plainte_prea_pivot_view"/>
+        <field name="domain">[('statut','not in',['state'])]</field>
+    </record>
+
+    <!--GRAPH 1-->
+    <record id="plainte_prea_graph_view_board_1" model="ir.ui.view">
+        <field name="name">plainte.graph.view</field>
+        <field name="model">mgp.plainte</field>
+        <field name="arch" type="xml">
+        <graph string="Par Categorie/genre" type="bar"> <!--line, bar stacked="True"-->
+            <field name="categorie_id"/>
+            <field name="genre" type="row"/>    <!--row-->
+        </graph>
+        </field>
+    </record>
+    
+    <record id="prea_act_plainte_mgp_graph_1" model="ir.actions.act_window">
+        <field name="name">Plaintes des citoyens</field>
+        <field name="res_model">mgp.plainte</field>
+        <field name="view_mode">graph</field>
+        <field name="view_id" ref="mgp.plainte_prea_graph_view_board_1"/>
+        <field name="domain">[('statut','not in',['state'])]</field>
+    </record>
+    
+    <!--GRAPH 2-->
+    <record id="plainte_prea_graph_view_board_2" model="ir.ui.view">
+        <field name="name">plainte.graph.view</field>
+        <field name="model">mgp.plainte</field>
+        <field name="arch" type="xml">
+            <graph string="Par éducation" type="line"> <!--line, bar stacked="True"-->
+                <field name="education_id"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="prea_act_plainte_mgp_graph_2" model="ir.actions.act_window">
+        <field name="name">Plaintes des citoyens</field>
+        <field name="res_model">mgp.plainte</field>
+        <field name="view_mode">graph</field>
+        <field name="view_id" ref="mgp.plainte_prea_graph_view_board_2"/>
+        <field name="domain">[('statut','not in',['state'])]</field>
+    </record>
+
+    <!--GRAPH 3-->
+    <record id="plainte_prea_graph_view_board_3" model="ir.ui.view">
+        <field name="name">plainte.graph.view</field>
+        <field name="model">mgp.plainte</field>
+        <field name="arch" type="xml">
+            <graph string="Par tranche d'âge" type="bar" orientation="vertical"> <!--line, bar stacked="True"-->
+                <field name="tranche_id"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="prea_act_plainte_mgp_graph_3" model="ir.actions.act_window">
+        <field name="name">Plaintes des citoyens</field>
+        <field name="res_model">mgp.plainte</field>
+        <field name="view_mode">graph</field>
+        <field name="view_id" ref="mgp.plainte_prea_graph_view_board_3"/>
+        <field name="domain">[('statut','not in',['state'])]</field>
+    </record>
+
+    <!--GRAPH 4-->
+    <record id="plainte_prea_graph_view_board_4" model="ir.ui.view">
+        <field name="name">plainte.graph.view</field>
+        <field name="model">mgp.plainte</field>
+        <field name="arch" type="xml">
+            <graph string="Par catégorie" type="pie"> <!--line, bar stacked="True"-->
+                <field name="categorie_id"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="prea_act_plainte_mgp_graph_4" model="ir.actions.act_window">
+        <field name="name">Plaintes des citoyens</field>
+        <field name="res_model">mgp.plainte</field>
+        <field name="view_mode">graph</field>
+        <field name="view_id" ref="mgp.plainte_prea_graph_view_board_4"/>
+        <field name="domain">[('statut','not in',['state'])]</field>
+    </record>
+
+    <!--ACTIONS-->
+    <record id="prea_plainte_dashboard_form_view" model="ir.ui.view">
+        <field name="name">Dashboard Form</field>
+        <field name="model">board.board</field>
+        <field name="arch" type="xml">
+            <form string="Dashboard">
+                <board style="1">
+                    <column>
+                        <action string="Plaintes - Situations" name="%(mgp.prea_act_plainte_mgp_kanban)d" />
+                    
+                        <action string="Plaintes - Catégories / Statuts" name="%(mgp.prea_act_plainte_mgp_pivot)d" />
+                    
+                        <action string="Plaintes - Genres" name="%(mgp.prea_act_plainte_mgp_graph_1)d" />
+                    
+                        <action string="Plaintes - Educations" name="%(mgp.prea_act_plainte_mgp_graph_2)d" />
+
+                        <action string="Plaintes - Tranches d'âge" name="%(mgp.prea_act_plainte_mgp_graph_3)d" />
+                        
+                        <action string="Plaintes - Catégories" name="%(mgp.prea_act_plainte_mgp_graph_4)d" />
+                    </column>
+                </board>
+            </form>
+        </field>
+    </record>
+
+    <record id="prea_plainte_dashboard" model="ir.actions.act_window">
+        <field name="name">Dashboard</field>
+        <field name="res_model">board.board</field>
+        <field name="view_mode">form</field>
+        <field name="usage">menu</field>
+        <field name="view_id" ref="prea_plainte_dashboard_form_view"/>
+    </record>
+
+</odoo>
