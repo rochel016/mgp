@@ -1,16 +1,16 @@
-# -*- coding: utf-8 -*-
+# Part of Odoo. See LICENSE file for full copyright and licensing details.
 {
     'name': "MGP",
-    'summary': 'Mecanisme de gestion des plaintes',
+    'summary': 'Mécanisme de gestion des plaintes',
     'description': """
         Le système Mécanisme de Gestion des Plaintes (MGP) permet de gérer les plaintes et doléances des émetteurs (citoyens),
         de façon accessible et pérenne.
     """,
-    #'category': '',
+    'category': 'Tools',
     'author': "UGD",
     'license': "AGPL-3", 
     'website': "https://digital.gov.mg/",
-    'version': '0.6.0 Beta',
+    'version': '1.0.0',
     'depends': ['base', 'mail', 'board'],
     'qweb': [
         'static/src/xml/icon_systray.xml',], #'static/src/xml/login.xml'
@@ -68,7 +68,10 @@
         # Langue
         # "static/src/xml/i18n.xml",
     ],
-    
+    'external_dependencies': {
+        "python": ["twilio"],
+    },
+
     'installable': True,
     'application': True,
     'auto_install': False,

@@ -22,6 +22,8 @@ class Log(models.Model):
         ('state_done_bpo', 'Traité'), # Le traitment du ticket est terminé
         ('state_invalid', 'Invalide'), # Ticket invalide par le PREA (non exploitable)
         ('state_closed_prea', 'Fermé'), # Ticket fermé par le PREA
+        ('state_call_back_success', 'Appel citoyen réussi'),
+        ('state_call_back_error', 'Appel citoyen non abouti'),
     ], string='Status', readonly=True, copy=False, default='state')
     
     # Message envoyé au citoyen (160 caractère)

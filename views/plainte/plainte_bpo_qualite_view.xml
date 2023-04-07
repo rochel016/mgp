@@ -6,7 +6,6 @@
       <search string="Recherche des tickets">
         <field name="reference" string="Ticket n°"/>
         <field name="date_appel"/>
-        <field name="tel"/>
 
         <separator string="Statut"/>
         <filter string='Tickets créés' name='state' domain="[('statut', '=', 'state')]"/>
@@ -320,8 +319,11 @@
         <progressbar
             field="statut"
             colors='{"state": "warning",
+                    "state_validate_prea": "primary",
+                    "state_eval_response_prea": "primary",
                     "state_send_response_bpo": "primary",
                     "state_done_bpo": "success",
+                    "state_closed_prea": "primary",
                     "state_invalid": "danger"}'/>
 
         <templates>
@@ -344,7 +346,7 @@
                 </t>
                 
                 <ul>
-                  <li><span class="mgp_tel_label fa fa-phone"><field name="tel"/></span></li>
+                  <li><span class="mgp_tel_label fa fa-phone"><field name="tel" attrs="{'invisible': True}"/></span></li>
                   <li><span class="mgp_label fa fa-clock-o"><field name="date_appel"/></span></li>
                   <li><span class="mgp_label fa fa-map-marker"><field name="district_id"/></span></li>
                   <li>
@@ -412,7 +414,7 @@
         <field name="categorie_id" options="{'no_open': True, 'no_create': True}"/>
         <field name="statut" class="text-warning"/>
         <field name="jours_traitement"/>
-        <field name="tel"/>
+        <field name="tel" attrs="{'invisible': True}"/>
       </calendar>
     </field>
   </record>
@@ -449,7 +451,7 @@
     <field name="res_model">mgp.plainte</field>
     <field name="view_mode">kanban,tree,calendar,form,graph,pivot</field>
     <field name="search_view_id" ref="plainte_bpo_qualite_search_view"/>
-    <field name="domain">[('statut','in',['state', 'state_send_response_bpo', 'state_done_bpo', 'state_invalid']) ]</field>
+    <field name="domain">[('statut','in',['state', 'state_validate_prea', 'state_eval_response_prea', 'state_send_response_bpo', 'state_done_bpo', 'state_closed_prea', 'state_invalid']) ]</field>
     <field name="help" type="html">
       <p class="o_view_nocontent_smiling_face">
         Démander aux opérateurs de créer au moins un ticket (plainte)

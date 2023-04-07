@@ -119,8 +119,6 @@ class Plainte(models.Model):
         # Ticket invalide par le PREA (non exploitable)
         ('state_invalid', 'Invalide'),
         ('state_closed_prea', 'Fermé'),  # Ticket fermé par le PREA
-        ('state_call_back_success', 'Appel citoyen réussi'),
-        ('state_call_back_error', 'Appel citoyen non abouti'),
     ], string='Statut', readonly=True, copy=False, default='state', group_expand='_expand_states')
 
     def _expand_states(self, states, domain, order):
@@ -550,7 +548,8 @@ class Plainte(models.Model):
                         rec.reference),
                     notif_receiver="Ticket n° {} en attente de validation".format(rec.reference))
 
-
+                # 3 - Envoyer un SMS Phone au citoyen
+                self.send_sms(rec, log)
         else:
             return {
                 'type': 'ir.actions.client',
@@ -590,6 +589,8 @@ class Plainte(models.Model):
                         rec.reference),
                     notif_receiver="Ticket n° {}, citoyen joignable".format(rec.reference))
 
+                # 3 - Envoyer un SMS Phone au citoyen
+                self.send_sms(rec, log)
         else:
             return {
                 'type': 'ir.actions.client',
@@ -629,6 +630,8 @@ class Plainte(models.Model):
                         rec.reference),
                     notif_receiver="Ticket n° {}, citoyen injoignable".format(rec.reference))
 
+                # 3 - Envoyer un SMS Phone au citoyen
+                self.send_sms(rec, log)
         else:
             return {
                 'type': 'ir.actions.client',
@@ -659,9 +662,7 @@ class Plainte(models.Model):
                 # 2 - call customer
                 call_response = self.use_vicidial_call(
                     phone=phone, bpo=login, ticket_number=ticket_number)
-                call_status = "state_call_back_success" if call_response else "state_call_back_error"
-                call_status_message = "joinbable" if call_response else "injoinbable ou erreur"
-
+                call_status = call_response if "state_call_back_success" else "state_call_back_error"
 
                 # 3 - Log : customer call state
                 self._do_log(
@@ -672,9 +673,9 @@ class Plainte(models.Model):
                         'mgp.mgp_gouvernance_prea').id,
                     action="Appeler le citoyen",
                     statut=call_status,
-                    notif_sender="Ticket n° {}, numéro citoyen {}, appelant {}".format(
-                        rec.reference, phone, login),
-                    notif_receiver="Appel ticket n° {}, citoyen {}".format(rec.reference, call_status_message))
+                    notif_sender="Ticket n° {}, citoy".format(
+                        rec.reference),
+                    notif_receiver="Ticket n° {}, citoyen joignable".format(rec.reference))
         else:
             return {
                 'type': 'ir.actions.client',
@@ -714,6 +715,8 @@ class Plainte(models.Model):
                         rec.reference),
                     notif_receiver="Ticket n° {}, citoyen satisfait".format(rec.reference))
 
+                # 3 - Envoyer un SMS Phone au citoyen
+                self.send_sms(rec, log)
         else:
             return {
                 'type': 'ir.actions.client',
@@ -755,6 +758,8 @@ class Plainte(models.Model):
                         rec.reference),
                     notif_receiver="Ticket n° {} à retraiter par le PMO".format(rec.reference))
 
+                # 3 - Envoyer un SMS Phone au citoyen
+                self.send_sms(rec, log)
         else:
             return {
                 'type': 'ir.actions.client',
@@ -794,6 +799,8 @@ class Plainte(models.Model):
                     notif_sender="Ticket n° {} annulé".format(rec.reference),
                     notif_receiver="Ticket n° {} annulé par PREA".format(rec.reference))
 
+                # 3 - Envoyer un SMS Phone au citoyen
+                self.send_sms(rec, log)
         else:
             return {
                 'type': 'ir.actions.client',
@@ -843,6 +850,8 @@ class Plainte(models.Model):
                         rec.reference),
                     notif_receiver="Ticket n° {} reçu du PREA".format(rec.reference))
 
+                # 3 - Envoyer un SMS Phone au citoyen
+                self.send_sms(rec, log)
         else:
             return {
                 'type': 'ir.actions.client',
@@ -933,6 +942,8 @@ class Plainte(models.Model):
                     notif_sender="Ticket n° {} fermé".format(rec.reference),
                     notif_receiver="Ticket n° {} fermé par le PREA".format(rec.reference))
 
+                # 3 - Envoyer un SMS Phone au citoyen
+                self.send_sms(rec, log)
         else:
             message = ''
             if (self.situation != 'injoignable' or self.resultat != 'satisfat'):
@@ -1015,6 +1026,8 @@ class Plainte(models.Model):
                         rec.reference),
                     notif_receiver="Ticket n° {}, réponse reçue du PMO".format(rec.reference))
 
+                # 3 - Envoyer un SMS Phone au citoyen
+                self.send_sms(rec, log)
         else:
             return {
                 'type': 'ir.actions.client',
@@ -1502,15 +1515,13 @@ class Plainte(models.Model):
 
     def use_vicidial_call(self, phone="", bpo="", ticket_number=""):
         try:
-            url = 'http://3.7.133.71/r1/ugd-poc/COM/HAIRUN/MGP/call_trigger'
+            url = 'https://prod-09.westeurope.logic.azure.com/workflows/66b45b4622434c76b37fd376cbb4fd93/triggers/manual/paths/invoke?api-version=2016-06-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=HghHPHTJ3HLldpVT4LG8PYpilG7Fs9KSlgIgvKaSAGA&pass=Wis0N7gccknqGXEjnMZH'
 
             headers = {
-                'Content-Type': 'application/json',
-                'X-Road-Client': 'ugd-poc/GOV/MANAGEMENT/EKORAGNA'
+                'Content-Type': 'application/json'
             }
 
-
-            data = {"vcdl_phone_number": phone[1:], "vcdl_agent": bpo, "mgp_ticket": ticket_number}
+            data = {phone: phone, bpo: bpo[1:], ticket_number: ticket_number}
 
             response = requests.request(
                 "POST", url, headers=headers, data=json.dumps(data))

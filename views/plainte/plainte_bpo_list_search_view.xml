@@ -6,7 +6,6 @@
       <search string="Recherche des tickets">
         <field name="reference" string="Ticket n°"/>
         <field name="date_appel"/>
-        <field name="tel"/>
         <field name="genre" />
 
         <separator string="Statut"/>

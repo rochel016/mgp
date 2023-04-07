@@ -20,7 +20,6 @@
       <search string="Recherche des tickets">
         <field name="reference" string="Ticket n°"/>
         <field name="date_appel"/>
-        <field name="tel"/>
 
         <separator string="Statut"/>
         <filter string='Tickets créés' name='state' domain="[('statut', '=', 'state')]"/>
@@ -222,7 +221,7 @@
           <!-- Title -->
           <div class="oe_title" position="before">
             <span class="mgp_label" attrs="{'invisible': [('is_last_group_receiver', '!=', True)]}" icon="fa-group" />  
-            <label for="reference" string="Ticket n°" />
+            <label for="reference" string="Ticket N°" />
             <h1><field name="reference"/></h1>
           </div>
 
@@ -261,7 +260,7 @@
 
             <group>
               <field name="tel" placeholder="Champs téléphone multiple séparé par point virgule" style="color:Blue;" 
-               attrs="{'readonly':[('statut', '!=', 'state')]}" autocomplete="off"/>
+               attrs="{'readonly':[('statut', '!=', 'state')], 'invisible': [('statut', '!=', 'state')]}" autocomplete="off"/>
 
               <field name="region_id" placeholder="Seléctionner la région"
                 options="{'no_create_edit': True, 'no_create': True, 'no_open': True}" 
@@ -292,6 +291,13 @@
 
             <field name="ennonce" string="Plainte/Doléance" placeholder="Exposez ici l'ennoncé de la plainte" widget="html"
               attrs="{'readonly':['|', ('check_write', '=', True), ('statut', '!=', 'state')]}" height="50"/>
+          </group>
+
+          <group>
+            <button name="call_back_customer" type="object" class="oe_highlight" icon="fa-phone"
+              string="Appeler le citoyen" 
+              confirm="Vous êtes sur le point d'appeler le citoyen. Vous confirmez?"
+              attrs="{'invisible': ['|', ('statut', '!=', 'state_send_response_bpo'), ('situation', 'in', ['joignable', 'injoignable'])]}"/>
           </group>
 
           <notebook>
@@ -393,7 +399,7 @@
                 </t>
                 
                 <ul>
-                  <li><span class="mgp_tel_label fa fa-phone"><field name="tel"/></span></li>
+                  <li><span class="mgp_tel_label fa fa-phone"><field name="tel" attrs="{'invisible': True}"/></span></li>
                   <li><span class="mgp_label fa fa-clock-o"><field name="date_appel"/></span></li>
                   <li><span class="mgp_label fa fa-map-marker"><field name="district_id"/></span></li>
                   <li>
@@ -456,7 +462,7 @@
         <field name="categorie_id" options="{'no_open': True, 'no_create': True}"/>
         <field name="statut" class="text-warning"/>
         <field name="jours_traitement"/>
-        <field name="tel"/>
+        <field name="tel" attrs="{'invisible': True}"/>
       </calendar>
     </field>
   </record>

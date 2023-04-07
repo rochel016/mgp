@@ -3,10 +3,11 @@ from datetime import datetime
 import re
 from odoo.exceptions import ValidationError
 from .sms import Sms
-import requests
-import json
+from twilio.rest import Client
 
 NEW_TICKET = "NOUVEAU"
+TWILIO_SUCCES_STATEMENTS = ("accepted", "queued", "sending", "sent")
+
 
 class Plainte(models.Model):
     _name = 'mgp.plainte'
@@ -119,8 +120,6 @@ class Plainte(models.Model):
         # Ticket invalide par le PREA (non exploitable)
         ('state_invalid', 'Invalide'),
         ('state_closed_prea', 'Fermé'),  # Ticket fermé par le PREA
-        ('state_call_back_success', 'Appel citoyen réussi'),
-        ('state_call_back_error', 'Appel citoyen non abouti'),
     ], string='Statut', readonly=True, copy=False, default='state', group_expand='_expand_states')
 
     def _expand_states(self, states, domain, order):
@@ -550,7 +549,8 @@ class Plainte(models.Model):
                         rec.reference),
                     notif_receiver="Ticket n° {} en attente de validation".format(rec.reference))
 
-
+                # 3 - Envoyer un SMS Phone au citoyen
+                self.send_sms(rec, log)
         else:
             return {
                 'type': 'ir.actions.client',
@@ -590,6 +590,8 @@ class Plainte(models.Model):
                         rec.reference),
                     notif_receiver="Ticket n° {}, citoyen joignable".format(rec.reference))
 
+                # 3 - Envoyer un SMS Phone au citoyen
+                self.send_sms(rec, log)
         else:
             return {
                 'type': 'ir.actions.client',
@@ -629,58 +631,14 @@ class Plainte(models.Model):
                         rec.reference),
                     notif_receiver="Ticket n° {}, citoyen injoignable".format(rec.reference))
 
+                # 3 - Envoyer un SMS Phone au citoyen
+                self.send_sms(rec, log)
         else:
             return {
                 'type': 'ir.actions.client',
                 'tag': 'display_notification',
                 'params': {
                     'title': _("Appel injoignable"),
-                    'message': _("Seul l'opérateur BPO peut faire cette action."),
-                    'type': 'danger',
-                    'sticky': False,
-                },
-            }
-
-    def call_back_customer(self):
-        """
-        - User : BPO
-        - Status: 'state_send_response_bpo', Statut non traité, attends la satisfaction ou non
-        - situation = 'appel'
-        - Desc: Le ticket est résolu
-        - From BPO to PREA
-        """
-        if self.env.user.has_group('mgp.mgp_gouvernance_operateur'):
-            for rec in self:
-                # 1 - Set call payload
-                login = self.env.user.login
-                ticket_number = rec.reference
-                phone = rec.tel
-
-                # 2 - call customer
-                call_response = self.use_vicidial_call(
-                    phone=phone, bpo=login, ticket_number=ticket_number)
-                call_status = "state_call_back_success" if call_response else "state_call_back_error"
-                call_status_message = "joinbable" if call_response else "injoinbable ou erreur"
-
-
-                # 3 - Log : customer call state
-                self._do_log(
-                    plainte_id=rec.id,
-                    group_sender_id=self.env.ref(
-                        'mgp.mgp_gouvernance_operateur').id,
-                    group_receiver_id=self.env.ref(
-                        'mgp.mgp_gouvernance_prea').id,
-                    action="Appeler le citoyen",
-                    statut=call_status,
-                    notif_sender="Ticket n° {}, numéro citoyen {}, appelant {}".format(
-                        rec.reference, phone, login),
-                    notif_receiver="Appel ticket n° {}, citoyen {}".format(rec.reference, call_status_message))
-        else:
-            return {
-                'type': 'ir.actions.client',
-                'tag': 'display_notification',
-                'params': {
-                    'title': _("Appeler le citoyen"),
                     'message': _("Seul l'opérateur BPO peut faire cette action."),
                     'type': 'danger',
                     'sticky': False,
@@ -714,6 +672,8 @@ class Plainte(models.Model):
                         rec.reference),
                     notif_receiver="Ticket n° {}, citoyen satisfait".format(rec.reference))
 
+                # 3 - Envoyer un SMS Phone au citoyen
+                self.send_sms(rec, log)
         else:
             return {
                 'type': 'ir.actions.client',
@@ -755,6 +715,8 @@ class Plainte(models.Model):
                         rec.reference),
                     notif_receiver="Ticket n° {} à retraiter par le PMO".format(rec.reference))
 
+                # 3 - Envoyer un SMS Phone au citoyen
+                self.send_sms(rec, log)
         else:
             return {
                 'type': 'ir.actions.client',
@@ -794,6 +756,8 @@ class Plainte(models.Model):
                     notif_sender="Ticket n° {} annulé".format(rec.reference),
                     notif_receiver="Ticket n° {} annulé par PREA".format(rec.reference))
 
+                # 3 - Envoyer un SMS Phone au citoyen
+                self.send_sms(rec, log)
         else:
             return {
                 'type': 'ir.actions.client',
@@ -843,6 +807,8 @@ class Plainte(models.Model):
                         rec.reference),
                     notif_receiver="Ticket n° {} reçu du PREA".format(rec.reference))
 
+                # 3 - Envoyer un SMS Phone au citoyen
+                self.send_sms(rec, log)
         else:
             return {
                 'type': 'ir.actions.client',
@@ -933,6 +899,8 @@ class Plainte(models.Model):
                     notif_sender="Ticket n° {} fermé".format(rec.reference),
                     notif_receiver="Ticket n° {} fermé par le PREA".format(rec.reference))
 
+                # 3 - Envoyer un SMS Phone au citoyen
+                self.send_sms(rec, log)
         else:
             message = ''
             if (self.situation != 'injoignable' or self.resultat != 'satisfat'):
@@ -1015,6 +983,8 @@ class Plainte(models.Model):
                         rec.reference),
                     notif_receiver="Ticket n° {}, réponse reçue du PMO".format(rec.reference))
 
+                # 3 - Envoyer un SMS Phone au citoyen
+                self.send_sms(rec, log)
         else:
             return {
                 'type': 'ir.actions.client',
@@ -1429,19 +1399,22 @@ class Plainte(models.Model):
 
         if rec:
             # 1 - get message // and sms must be validated from parameters
-            sms = self.env['mgp.plainte_sms'].search([('statut', '=', rec.statut), ('langue', '=', rec.langue), ('is_valid', '=', True)], limit=1)
+            sms = self.env['mgp.plainte_sms'].search(
+                [('statut', '=', rec.statut), ('langue', '=', rec.langue), ('is_valid', '=', True)], limit=1)
 
             # 2- Send sms
             if sms:
                 # Find {reference} in the record and replace it
                 sms_tmps = sms.message.replace("{reference}", rec.reference)
-                status_code = self.send_sms_to_customer(customer_number=rec.tel, message=sms_tmps)
+                status_code = self.send_sms_to_customer(
+                    customer_number=rec.tel, message=sms_tmps)
 
             # 3- Save Sms in plainte_log
-            log = self.env['mgp.plainte_log'].search([('id', '=', log.id)], limit=1) 
+            log = self.env['mgp.plainte_log'].search(
+                [('id', '=', log.id)], limit=1)
             if log and sms:
                 log.sms = sms_tmps
-                if status_code in range(200, 299):
+                if 200 >= status_code <= 299:
                     log.sms_sent = True
                 else:
                     log.sms_sent = False
@@ -1462,66 +1435,25 @@ class Plainte(models.Model):
         Note: Le format du telephone 9 digits sans le +261
         """
         status_code = 400
-        urlAuth = "https://api.orange.com/oauth/v3/token"
-        payload='grant_type=client_credentials'
-
-        headers = {
-            'Content-Type': 'application/x-www-form-urlencoded',
-            'Authorization': 'Basic N0V3SEM1dUJ5WWJmRzZsVE5VYjZsT282UUE4TTF2UWE6TFlaVURiT20zR0FkaXFBaw=='
-        }
-
-        response_auth = requests.request("POST", urlAuth, headers=headers, data=payload)
-        authorization = json.loads(response_auth.text)
-        url = "https://api.orange.com/smsmessaging/v1/outbound/tel%3A%2B261/requests"
-        
         try:
-            payload = json.dumps({
-                "outboundSMSMessageRequest": {
-                    "senderAddress": "tel:+261",
-                    "address": f'tel:+261{customer_number[1:]}',
-                    "outboundSMSTextMessage": {
-                        "message": message
-                    }
-                }
-            })
-            
-            headers = {
-                'Content-Type': 'application/json',
-                'Authorization': f'Bearer {authorization["access_token"]}'
-            }
-            
-            response = requests.request("POST", url, headers=headers, data=payload)
-            
-            print("Sending SMS status: {} ,Sent to: {}".format(response.status_code, customer_number))
-        
-            return response.status_code
+            account_sid = 'ACd42446dfc4e7194c73f9d051bab5caee'
+            auth_token = '06ba70801fb824aecc338f63efb2d7dd'
+            client = Client(account_sid, auth_token)
+
+            response = client.messages.create(
+                messaging_service_sid='MG6ae2e6405f50fce0eec0a03263dec9f4',
+                body=message,
+                to='+261%s' % (customer_number[1:])
+            )
+
+            print("Sending SMS status: {}, SMS SID: {} ,Sent to: {}".format(
+                response.status, response.sid, customer_number))
+
+            return 200 if response.status in TWILIO_SUCCES_STATEMENTS else status_code
         except:
             pass
 
         return status_code
-
-    def use_vicidial_call(self, phone="", bpo="", ticket_number=""):
-        try:
-            url = 'http://3.7.133.71/r1/ugd-poc/COM/HAIRUN/MGP/call_trigger'
-
-            headers = {
-                'Content-Type': 'application/json',
-                'X-Road-Client': 'ugd-poc/GOV/MANAGEMENT/EKORAGNA'
-            }
-
-
-            data = {"vcdl_phone_number": phone[1:], "vcdl_agent": bpo, "mgp_ticket": ticket_number}
-
-            response = requests.request(
-                "POST", url, headers=headers, data=json.dumps(data))
-
-            status_code = (response.status_code == 200) if True else False
-
-            return status_code
-        except:
-            pass
-
-        return False
 
     # Auto reload
     # return {
